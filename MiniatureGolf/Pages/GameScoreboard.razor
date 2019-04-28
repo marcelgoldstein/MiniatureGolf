@@ -1,0 +1,317 @@
+﻿@page "/MiniatureGolf"
+@page "/MiniatureGolf/{GameId}"
+@page "/MiniatureGolf/{GameId}/{Mode}"
+
+@using MiniatureGolf.Models
+
+@inherits MiniatureGolf.Pages.GameScoreboardModel
+
+<h1>MiniatureGolf scoreboard</h1>
+
+<div class="c-settingsBox">
+    <div class="c-flexHorizontalContainer">
+        <span class="c-flexHorizontalContainer">
+            @if (this.CurrentUserMode == UserMode.Editor || this.CurrentUserMode == UserMode.Spectator)
+            {
+                <TelerikButton OnClick="@(this.ToggleUserMode)">editor / spectator</TelerikButton>
+            }
+
+            @if (this.CurrentUserMode == UserMode.Editor)
+            {
+                <TelerikButton Primary="true" OnClick="@(() => { this.CreateNewGame(); })" Enabled="@(this.Gamestate.Players.Count > 0 || this.Gamestate.Courses.Count > 0)">new game</TelerikButton>
+            }
+        </span>
+
+        <span class="c-flexHorizontalContainer c-flexHorizontalChildRight">
+            @if (this.CurrentUserMode == UserMode.Editor)
+            {
+                <TelerikDropDownList Data="@this.ShareModes" bind-value="@this.SelectedShareMode" ValueField="@nameof(UserModeDropDownItem.ModeId)" TextField="@nameof(UserModeDropDownItem.Name)" Height="38" Width="160" PopupHeight="90" TItem="@UserModeDropDownItem" TValue="@int" />
+                <a class="btn btn-light c-flexHorizontalChildRight" href="@($"/MiniatureGolf/{this.Gamestate.Id}/{(int)this.SelectedShareMode}")" role="button"><span class="oi oi-link-intact">  share</span></a>
+            }
+            else
+            {
+                <a class="btn btn-light c-flexHorizontalChildRight" href="@($"/MiniatureGolf/{this.Gamestate.Id}/{(int)UserMode.SpectatorReadOnly}")" role="button"><span class="oi oi-link-intact">  share</span></a>
+            }
+        </span>
+    </div>
+
+    @if (this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Configuring)
+    {
+        <div>
+            <div>
+                <span class="c-rowElement">
+                    <TelerikButton Class="c-increaseButton" OnClick="@this.RemovePlayer" Enabled="@(this.Gamestate.Players.Count > 0)">-</TelerikButton>
+                    <TelerikTextBox Label="Player" bind-value="@PlayerNameToAdd" />
+                    <TelerikButton Class="c-increaseButton" OnClick="@this.AddPlayer">+</TelerikButton>
+                </span>
+
+                <span class="c-rowElement">
+                    <TelerikButton Class="c-increaseButton" OnClick="@this.RemoveCourse" Enabled="@(this.Gamestate.Courses.Count > 0)">-</TelerikButton>
+                    <span class="k-widget k-numerictextbox c-numberInputField">
+                        <span class="k-numeric-wrap">
+                            <input class="k-input k-formatted-value" bind="@this.CourseParNumberToAdd" title="Par" disabled />
+                            <span class="k-select">
+                                <span class="k-link k-link-increase" aria-label="Increase value" title="Increase value" onclick="@(() => { if (this.CourseParNumberToAdd < 7) this.CourseParNumberToAdd++; })">
+                                    <span class="k-icon k-i-arrow-n"></span>
+                                </span>
+                                <span class="k-link k-link-decrease" aria-label="Decrease value" title="Decrease value" onclick="@(() => { if (this.CourseParNumberToAdd > 1) this.CourseParNumberToAdd--; })">
+                                    <span class="k-icon k-i-arrow-s"></span>
+                                </span>
+                            </span>
+                        </span>
+                    </span>
+                    <TelerikButton Class="c-increaseButton" OnClick="@this.AddCourse">+</TelerikButton>
+                </span>
+
+                <TelerikButton OnClick="@(this.StartGame)" Enabled="@((this.Gamestate.Players.Count > 0 && this.Gamestate.Courses.Count > 0))">start</TelerikButton>
+            </div>
+        </div>
+    }
+</div>
+
+<TelerikGrid Data=@this.Gamestate.Courses Height="@DataGridHeight">
+
+    <TelerikGridColumns>
+        @if (this.ShowColumns)
+        {
+            <TelerikGridColumn Title="" Editable="false" Width="18">
+                <Template>
+
+                    @if (context is Course c)
+                    {
+                        if (c == this.CurrentEditCourse)
+                        {
+                            @*<div class="c-currentEditDot" />*@
+                            <span class="oi oi-aperture" style="color: darkred;"></span>
+                        }
+                        else if (c.PlayerHits.Any() && c.PlayerHits.All(a => a.Value != null))
+                        {
+                            <span class="oi oi-check" style="color: green;" />
+                        }
+                        else if (c.Number == this.Gamestate.CurrentCourseNumber)
+                        {
+                            <span class="oi oi-aperture" style="color: darkseagreen;"></span>
+                        }
+                    }
+                </Template>
+            </TelerikGridColumn>
+
+
+            <TelerikGridColumn Title="No." Field="@nameof(Course.Number)" Editable="false" Width="40">
+                <Template>
+                    <div class="c-alignCenter">@((context as Course).Number)</div>
+                </Template>
+            </TelerikGridColumn>
+
+            <TelerikGridColumn Title="Par" Field="@nameof(Course.Par)" Editable="false" Width="40">
+                @*Title="@($"Par ({this.Gamestate.Courses.Where(a => a.PlayerHits.Any(b => b.Value != null)).Sum(a => a.Par)})")"*@
+                <Template>
+                    <div class="c-alignCenter">@((context as Course).Par)</div>
+                </Template>
+            </TelerikGridColumn>
+
+            @if (this.Gamestate.Players.Count == 0)
+            {
+                <TelerikGridColumn Title="" Field="" />
+            }
+
+            @foreach (var player in this.RankedPlayers)
+            {
+                <TelerikGridColumn Title="@($"{player.Name} ({this.Gamestate.Courses.Sum(a => a.PlayerHits[player.Id] ?? 0)})")">
+                    <Template>
+                        <div class="c-alignCenter">
+                            @if (context is Course c)
+                            {
+                                if (c == this.CurrentEditCourse)
+                                {
+                                    <span class="k-widget k-numerictextbox c-numberInputField">
+                                        <span class="k-numeric-wrap c-incellControl">
+                                            <input class="k-input k-formatted-value" bind="@c.PlayerHits[player.Id]" />
+                                            <span class="k-select">
+                                                <span class="k-link k-link-increase" aria-label="Increase value" title="Increase value" onclick="@(() => { if (c.PlayerHits[player.Id] == null) c.PlayerHits[player.Id] = c.Par; else if (c.PlayerHits[player.Id] < 7) c.PlayerHits[player.Id]++; })">
+                                                    <span class="k-icon k-i-arrow-n"></span>
+                                                </span>
+                                                <span class="k-link k-link-decrease" aria-label="Decrease value" title="Decrease value" onclick="@(() => { if (c.PlayerHits[player.Id] == null) c.PlayerHits[player.Id] = c.Par; else if (c.PlayerHits[player.Id] > 1) c.PlayerHits[player.Id]--; })">
+                                                    <span class="k-icon k-i-arrow-s"></span>
+                                                </span>
+                                            </span>
+                                        </span>
+                                    </span>
+                                    
+                                    <TelerikButton Class="c-incellControl" OnClick="@(() => { c.PlayerHits[player.Id] = null; })" Enabled="@(c.PlayerHits[player.Id] != null)">
+                                        <span class="oi oi-circle-x" style="color: red;" onclick="@(() => { c.PlayerHits[player.Id] = null; })" />
+                                    </TelerikButton>
+                                }
+                                else
+                                {
+                                    <div class="c-ratingColorize" data-hitDiffToPar="@(c.PlayerHits[player.Id] - c.Par)">
+                                        <div class="c-alignCenter">@(c.PlayerHits[player.Id])</div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </Template>
+                </TelerikGridColumn>
+            }
+
+            @if (this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Running)
+            {
+                <TelerikGridColumn Title="" Editable="false" Width="90">
+                    <Template>
+                        @if ((context == this.CurrentEditCourse))
+                        {
+                            <TelerikButton Icon="save" Primary="true" Class="c-gridEditButton" OnClick="@this.EndEdit">finish</TelerikButton>
+
+                        }
+                        else
+                        {
+                            <TelerikButton Icon="edit" Primary="true" Class="c-gridEditButton" OnClick="@(() => this.StartEdit(context as Course))">start</TelerikButton>
+                        }
+
+                    </Template>
+                </TelerikGridColumn>
+            }
+        }
+    </TelerikGridColumns>
+</TelerikGrid>
+
+<TelerikWindow Width="420" Height="260" Centered="true" Visible="@IsNotificationWindowVisible" Modal="true" >
+    <TelerikWindowTitle>
+        <strong>404 : game not found</strong>
+    </TelerikWindowTitle>
+    <TelerikWindowActions>
+        <TelerikWindowAction Name="Close" OnClick="@(() => { this.IsNotificationWindowVisible = false; })"/>
+    </TelerikWindowActions>
+    <TelerikWindowContent>
+        <div style="display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-around;">
+                <div>
+                    <div><strong>Oops!</strong></div>
+                    <div>you found a</div>
+                    <div><strong style="font-size: 1.4em;">Dead Link</strong></div>
+                </div>
+                <img src="/assets/images/dead-link.jpg" />
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
+                <TelerikButton OnClick="@(() => { this.IsNotificationWindowVisible = false; })" Primary="true">OK</TelerikButton>
+            </div>
+        </div>
+
+    </TelerikWindowContent>
+</TelerikWindow>
+
+<style>
+    div.c-settingsBox {
+        padding-bottom: 20px;
+    }
+
+    .c-rowElement {
+        white-space: nowrap;
+        padding-right: 20px;
+    }
+
+    .c-numberInputField {
+        width: 70px;
+    }
+
+    .c-alignCenter {
+        text-align: center;
+    }
+
+    /*div.c-currentEditDot {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border-width: medium;
+        border-style: solid;
+        border-color: slategray;
+        background-color: darkred;
+        text-align: center;
+    }*/
+
+    .c-gridEditButton {
+        width: 85px;
+        height: 32px;
+    }
+
+    .c-incellControl {
+        height: 32px;
+    }
+
+    th.k-header {
+        font-weight: bold;
+        text-align: center;
+    }
+
+    .k-grid th, .k-grid td {
+        padding: 5px;
+    }
+
+    .c-increaseButton {
+        width: 30px;
+    }
+
+    div.c-flexHorizontalContainer {
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    div.c-ratingColorize[data-hitDiffToPar="-6"] {
+        background-color: rgba(0,150,0,0.6);
+    }
+
+    div.c-ratingColorize[data-hitDiffToPar="-5"] {
+        background-color: rgba(0,150,0,0.5);
+    }
+
+    div.c-ratingColorize[data-hitDiffToPar="-4"] {
+        background-color: rgba(0,150,0,0.4);
+    }
+
+    div.c-ratingColorize[data-hitDiffToPar="-3"] {
+        background-color: rgba(0,150,0,0.3);
+    }
+
+    div.c-ratingColorize[data-hitDiffToPar="-2"] {
+        background-color: rgba(0,150,0,0.2);
+    }
+
+    div.c-ratingColorize[data-hitDiffToPar="-1"] {
+        background-color: rgba(0,150,0,0.1);
+    }
+
+    div.c-ratingColorize[data-hitDiffToPar="0"] {
+        background-color: rgba(0,0,0,0.1);
+    }
+
+    div.c-ratingColorize[data-hitDiffToPar="1"] {
+        background-color: rgba(150,0,0,0.1);
+    }
+
+    div.c-ratingColorize[data-hitDiffToPar="2"] {
+        background-color: rgba(150,0,0,0.2);
+    }
+
+    div.c-ratingColorize[data-hitDiffToPar="3"] {
+        background-color: rgba(150,0,0,0.3);
+    }
+
+    div.c-ratingColorize[data-hitDiffToPar="4"] {
+        background-color: rgba(150,0,0,0.4);
+    }
+
+    div.c-ratingColorize[data-hitDiffToPar="5"] {
+        background-color: rgba(150,0,0,0.5);
+    }
+
+    div.c-ratingColorize[data-hitDiffToPar="6"] {
+        background-color: rgba(150,0,0,0.6);
+    }
+
+    tbody tr.k-master-row td[role=gridcell] {
+        padding: 1px;
+    }
+</style>
