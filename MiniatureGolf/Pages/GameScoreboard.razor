@@ -122,24 +122,16 @@
                         <div class="c-alignCenter">
                             @if (context is Course c)
                             {
-                                if (c == this.CurrentEditCourse)
+                                if (this.CurrentUserMode == UserMode.Editor && c == this.CurrentEditCourse)
                                 {
-                                    <span class="k-widget k-numerictextbox c-numberInputField">
-                                        <span class="k-numeric-wrap c-incellControl">
-                                            <input class="k-input k-formatted-value" bind="@c.PlayerHits[player.Id]" />
-                                            <span class="k-select">
-                                                <span class="k-link k-link-increase" aria-label="Increase value" title="Increase value" onclick="@(() => { if (c.PlayerHits[player.Id] == null) c.PlayerHits[player.Id] = c.Par; else if (c.PlayerHits[player.Id] < 7) c.PlayerHits[player.Id]++; })">
-                                                    <span class="k-icon k-i-arrow-n"></span>
-                                                </span>
-                                                <span class="k-link k-link-decrease" aria-label="Decrease value" title="Decrease value" onclick="@(() => { if (c.PlayerHits[player.Id] == null) c.PlayerHits[player.Id] = c.Par; else if (c.PlayerHits[player.Id] > 1) c.PlayerHits[player.Id]--; })">
-                                                    <span class="k-icon k-i-arrow-s"></span>
-                                                </span>
-                                            </span>
-                                        </span>
-                                    </span>
-                                    
+                                    <TelerikButton Class="c-incellControl" OnClick="@(() => { if (c.PlayerHits[player.Id] == null) c.PlayerHits[player.Id] = 1; else if (c.PlayerHits[player.Id] < 7) c.PlayerHits[player.Id]++; })" Enabled="@(c.PlayerHits[player.Id] == null || c.PlayerHits[player.Id] < 7)">
+                                        <span class="c-alignCenter" style="width: 50px;">@c.PlayerHits[player.Id]</span>
+                                    </TelerikButton>
+
                                     <TelerikButton Class="c-incellControl" OnClick="@(() => { c.PlayerHits[player.Id] = null; })" Enabled="@(c.PlayerHits[player.Id] != null)">
-                                        <span class="oi oi-circle-x" style="color: red;" onclick="@(() => { c.PlayerHits[player.Id] = null; })" />
+                                        <span style="width: 30px;">
+                                            <span class="oi oi-circle-x" style="color: red;" onclick="@(() => { c.PlayerHits[player.Id] = null; })" />
+                                        </span>
                                     </TelerikButton>
                                 }
                                 else
@@ -160,12 +152,12 @@
                     <Template>
                         @if ((context == this.CurrentEditCourse))
                         {
-                            <TelerikButton Icon="save" Primary="true" Class="c-gridEditButton" OnClick="@this.EndEdit">finish</TelerikButton>
+                            <TelerikButton Icon="save" Primary="true" Class="c-gridEditButton c-incellControl c-alignCenter" OnClick="@this.EndEdit">finish</TelerikButton>
 
                         }
                         else
                         {
-                            <TelerikButton Icon="edit" Primary="true" Class="c-gridEditButton" OnClick="@(() => this.StartEdit(context as Course))">start</TelerikButton>
+                            <TelerikButton Icon="edit" Primary="true" Class="c-gridEditButton c-incellControl c-alignCenter" OnClick="@(() => this.StartEdit(context as Course))">start</TelerikButton>
                         }
 
                     </Template>
@@ -232,11 +224,11 @@
 
     .c-gridEditButton {
         width: 85px;
-        height: 32px;
     }
 
     .c-incellControl {
-        height: 32px;
+        height: 22px;
+        padding: 0;
     }
 
     th.k-header {
