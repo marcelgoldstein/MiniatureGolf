@@ -225,28 +225,7 @@ namespace MiniatureGolf.Pages
 
             this.Invoke(() =>
             {
-                switch (this.CurrentUserMode)
-                {
-                    case UserMode.Editor:
-                        if (this.Gamestate.Status == Gamestatus.Running)
-                        {
-                            this.DataGridHeight = 34M * rowCount + 37M; // mehr höhe, da hohe buttons
-                        }
-                        else
-                        {
-                            this.DataGridHeight = 26M * rowCount + 37M;
-                        }
-
-                        break;
-                    case UserMode.Spectator:
-                        this.DataGridHeight = 26M * rowCount + 37M;
-                        break;
-                    case UserMode.SpectatorReadOnly:
-                        this.DataGridHeight = 26M * rowCount + 37M;
-                        break;
-                    default:
-                        throw new NotImplementedException();
-                }
+                this.DataGridHeight = 26M * rowCount + 37M;
             });
         }
 
