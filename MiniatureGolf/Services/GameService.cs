@@ -31,19 +31,15 @@ namespace MiniatureGolf.Services
                 this.Games.Remove(gs.Id);
             }
         }
-
-
         #endregion Games 
 
         #region Courses
-
-
         public bool TryAddCourse(string gameId, int par)
         {
             if (this.TryGetGame(gameId, out var gs))
             {
                 var t = new Course() { Number = gs.Courses.Count + 1, Par = par };
-                foreach (var player in gs.Players)
+                foreach (var player in gs.Teams.SelectMany(a => a.Players))
                 {
                     t.PlayerHits[player.Id] = null;
                 }
@@ -83,7 +79,7 @@ namespace MiniatureGolf.Services
             {
                 if (string.IsNullOrWhiteSpace(name))
                 {
-                    name = $"Player {gs.Players.Count + 1}";
+                    name = $"Player {gs.Teams.SelectMany(a => a.Players).Count() + 1:00}";
                 }
 
                 var p = new Player() { Name = name };
@@ -91,7 +87,13 @@ namespace MiniatureGolf.Services
                 { // bei allen bestehenden tracks den neuen player hinzufügen
                     track.PlayerHits[p.Id] = null;
                 }
-                gs.Players.Add(p);
+
+                if (gs.Teams.Count == 0)
+                { // falls noch kein team vorhanden ist, eins erstellen
+                    this.TryAddTeam(gameId);
+                }
+
+                gs.Teams.Last().Players.Add(p);
 
                 return true;
             }
@@ -105,10 +107,24 @@ namespace MiniatureGolf.Services
         {
             if (this.TryGetGame(gameId, out var gs))
             {
-                if (gs.Players.Count > 0)
+                if (gs.Teams.SelectMany(a => a.Players).Count() > 0)
                 {
-                    var p = gs.Players.Last();
-                    gs.Players.Remove(p);
+                    var t = gs.Teams.LastOrDefault();
+
+                    if (t?.Players.Count == 0)
+                    {
+                        gs.Teams.Remove(t);
+                    }
+
+                    t = gs.Teams.LastOrDefault();
+
+                    var p = t.Players.Last();
+                    t.Players.Remove(p);
+                    if (t.Players.Count == 0)
+                    { // letzter spieler aus team entfernt, dann auch das team entfernen
+                        gs.Teams.Remove(t);
+                    }
+
                     foreach (var course in gs.Courses)
                     {
                         course.PlayerHits.Remove(p.Id);
@@ -123,6 +139,28 @@ namespace MiniatureGolf.Services
             }
         }
         #endregion Playes
+
+        #region Teams
+        public bool TryAddTeam(string gameId)
+        {
+            if (this.TryGetGame(gameId, out var gs))
+            {
+                var t = gs.Teams.LastOrDefault();
+                if (t != null && t.Players.Count == 0)
+                { // bereits ein team vorhanden und dieses hat aber keine player -> kein neues team erstellen
+                    return false;
+                }
+
+                t =  new Team { Number = gs.Teams.Count + 1 };
+
+                gs.Teams.Add(t);
+
+                return true;
+            }
+
+            return false;
+        }
+        #endregion Teams
         #endregion Methods
 
     }

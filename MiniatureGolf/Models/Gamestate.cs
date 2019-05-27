@@ -22,7 +22,7 @@ namespace MiniatureGolf.Models
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
 
-        public List<Player> Players { get; set; } = new List<Player>();
+        public List<Team> Teams { get; set; } = new List<Team>();
         public List<Course> Courses { get; set; } = new List<Course>();
         public Gamestatus Status { get; set; } = Gamestatus.Created;
         public int? CurrentCourseNumber { get; set; }

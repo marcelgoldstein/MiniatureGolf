@@ -1,6 +1,7 @@
 ﻿@page "/MiniatureGolf"
 @page "/MiniatureGolf/{GameId}"
 @page "/MiniatureGolf/{GameId}/{Mode}"
+@page "/MiniatureGolf/{GameId}/{Mode}/{TeamNumber}"
 
 @using MiniatureGolf.Models
 
@@ -18,7 +19,14 @@
 
             @if (this.CurrentUserMode == UserMode.Editor)
             {
-                <TelerikButton Primary="true" OnClick="@(() => { this.CreateNewGame(); })" Enabled="@(this.Gamestate.Players.Count > 0 || this.Gamestate.Courses.Count > 0)">new game</TelerikButton>
+                <TelerikButton Primary="true" OnClick="@(() => { this.CreateNewGame(); })" Enabled="@(this.Gamestate.Teams.SelectMany(a => a.Players).Count() > 0 || this.Gamestate.Courses.Count > 0)">new game</TelerikButton>
+            }
+
+            @if (this.Gamestate.Teams.Count > 1)
+            {
+                <TelerikDropDownList Data="@this.Gamestate.Teams.Where(a => a.Players.Count > 0)" bind-value="@this.SelectedTeamNumber" ValueField="@nameof(Team.Number)" TextField="@nameof(Team.Name)" 
+                                     Height="38" Width="140" PopupHeight="200" TItem="@Team" TValue="@int" DefaultItem="@this.NullTeamSelection"
+                                     />
             }
         </span>
 
@@ -26,12 +34,8 @@
             @if (this.CurrentUserMode == UserMode.Editor)
             {
                 <TelerikDropDownList Data="@this.ShareModes" bind-value="@this.SelectedShareMode" ValueField="@nameof(UserModeDropDownItem.ModeId)" TextField="@nameof(UserModeDropDownItem.Name)" Height="38" Width="160" PopupHeight="90" TItem="@UserModeDropDownItem" TValue="@int" />
-                <a class="btn btn-light c-flexHorizontalChildRight" href="@($"/MiniatureGolf/{this.Gamestate.Id}/{(int)this.SelectedShareMode}")" role="button"><span class="oi oi-link-intact">  share</span></a>
             }
-            else
-            {
-                <a class="btn btn-light c-flexHorizontalChildRight" href="@($"/MiniatureGolf/{this.Gamestate.Id}/{(int)UserMode.SpectatorReadOnly}")" role="button"><span class="oi oi-link-intact">  share</span></a>
-            }
+            <a class="btn btn-light c-flexHorizontalChildRight" href="@($"/MiniatureGolf/{this.Gamestate.Id}/{(int)this.SelectedShareMode}/{this.SelectedTeamNumber}")" role="button"><span class="oi oi-link-intact">  share</span></a>
         </span>
     </div>
 
@@ -40,9 +44,10 @@
         <div>
             <div>
                 <span class="c-rowElement">
-                    <TelerikButton Class="c-increaseButton" OnClick="@this.RemovePlayer" Enabled="@(this.Gamestate.Players.Count > 0)">-</TelerikButton>
+                    <TelerikButton Class="c-increaseButton" OnClick="@this.RemovePlayer" Enabled="@(this.Gamestate.Teams.SelectMany(a => a.Players).Count() > 0)">-</TelerikButton>
                     <TelerikTextBox Label="Player" bind-value="@PlayerNameToAdd" />
                     <TelerikButton Class="c-increaseButton" OnClick="@this.AddPlayer">+</TelerikButton>
+                    <TelerikButton Icon="myspace" OnClick="@this.CreateNewTeam">new team</TelerikButton>
                 </span>
 
                 <span class="c-rowElement">
@@ -63,7 +68,7 @@
                     <TelerikButton Class="c-increaseButton" OnClick="@this.AddCourse">+</TelerikButton>
                 </span>
 
-                <TelerikButton OnClick="@(this.StartGame)" Enabled="@((this.Gamestate.Players.Count > 0 && this.Gamestate.Courses.Count > 0))">start</TelerikButton>
+                <TelerikButton Primary="true" OnClick="@(this.StartGame)" Enabled="@((this.Gamestate.Teams.SelectMany(a => a.Players).Count() > 0 && this.Gamestate.Courses.Count > 0))">start</TelerikButton>
             </div>
         </div>
     }
@@ -110,7 +115,7 @@
                 </Template>
             </TelerikGridColumn>
 
-            @if (this.Gamestate.Players.Count == 0)
+            @if (this.Gamestate.Teams.SelectMany(a => a.Players).Count() == 0)
             {
                 <TelerikGridColumn Title="" Field="" />
             }
@@ -146,7 +151,7 @@
                 </TelerikGridColumn>
             }
 
-            @if (this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Running)
+            @if (this.ShowEditColumn && this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Running)
             {
                 <TelerikGridColumn Title="" Editable="false" Width="90">
                     <Template>
@@ -305,5 +310,6 @@
 
     tbody tr.k-master-row td[role=gridcell] {
         padding: 1px;
+        height:26px;
     }
 </style>
