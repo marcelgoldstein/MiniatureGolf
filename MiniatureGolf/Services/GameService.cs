@@ -1,9 +1,21 @@
 ﻿using MiniatureGolf.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace MiniatureGolf.Services
 {
+    #region Enums
+    public enum DateFilter
+    {
+        Day,
+        Week,
+        Month,
+        Quarter,
+        Year,
+    }
+    #endregion Enums
+
     public class GameService
     {
         #region Properties
@@ -30,6 +42,26 @@ namespace MiniatureGolf.Services
             {
                 this.Games.Remove(gs.Id);
             }
+        }
+
+        public List<Gamestate> GetGames(Gamestatus status, DateFilter dateFilter)
+        {
+            var compareDate = dateFilter switch
+            {
+                DateFilter.Day => DateTime.Today.Date,
+                DateFilter.Week => DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek + (int)DayOfWeek.Monday),
+                DateFilter.Month => new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1),
+                DateFilter.Quarter => new DateTime(DateTime.Today.Year, (((((DateTime.Today.Month - 1) / 3) + 1) - 1) * 3) + 1, 1),
+                DateFilter.Year => new DateTime(DateTime.Today.Year, 1, 1),
+                _ => throw new NotImplementedException(),
+            };
+
+            var games = this.Games
+                .Where(a => a.Value.Status == status
+                    && a.Value.CreationTime.ToLocalTime() >= compareDate)
+                .Select(a => a.Value);
+
+            return games.ToList();
         }
         #endregion Games 
 
@@ -151,7 +183,7 @@ namespace MiniatureGolf.Services
                     return false;
                 }
 
-                t =  new Team { Number = gs.Teams.Count + 1 };
+                t = new Team { Number = gs.Teams.Count + 1 };
 
                 gs.Teams.Add(t);
 
