@@ -16,10 +16,8 @@ namespace MiniatureGolf.Pages
         #endregion Variables
 
         #region Properties
-        [Inject]
-        public GameService GameService { get; private set; }
-        [Inject]
-        protected IUriHelper UriHelper { get; private set; }
+        [Inject] public GameService GameService { get; private set; }
+        [Inject] protected IUriHelper UriHelper { get; private set; }
 
         [Parameter] protected string GameId { get; set; }
         [Parameter] protected string Mode { get; set; }
@@ -47,7 +45,7 @@ namespace MiniatureGolf.Pages
         }
 
         public Team SelectedTeam { get; set; }
-        public Team NullTeamSelection { get; set; } = new Team { Number = -1 };
+        public Team NullTeamSelection { get; set; } = new Team { Number = 0 };
 
         public bool IsNotificationWindowVisible { get; set; }
         #endregion Properties
