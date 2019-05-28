@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MiniatureGolf.Models;
 using MiniatureGolf.Services;
+using MiniatureGolf.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +11,10 @@ namespace MiniatureGolf.Pages
 {
     public class GameScoreboardModel : ComponentBase
     {
+        #region Variables
+        private readonly RedundantExecutionSuppressor res; // wird verwendet, um eine Verzögerung der Aktualisierung zu bewirken, wenn der Editierer Punkte geändert hat. 
+        #endregion Variables
+
         #region Properties
         [Inject]
         public GameService GameService { get; private set; }
@@ -26,10 +31,10 @@ namespace MiniatureGolf.Pages
         public int CourseParNumberToAdd { get; set; } = 3;
 
         public List<Player> RankedPlayers { get; set; } = new List<Player>();
-        public Course CurrentEditCourse { get; set; }
         public decimal DataGridHeight { get; set; }
         public bool ShowColumns { get; set; } = true;
         public UserMode CurrentUserMode { get; set; }
+        public Course CurrentEditCourse { get; set; }
 
         protected List<UserModeDropDownItem> ShareModes { get; set; }
         public int SelectedShareMode { get; set; } = (int)UserMode.SpectatorReadOnly;
@@ -45,9 +50,16 @@ namespace MiniatureGolf.Pages
         public Team NullTeamSelection { get; set; } = new Team { Number = -1 };
 
         public bool IsNotificationWindowVisible { get; set; }
-        public bool ShowEditColumn { get; set; } = true;
         #endregion Properties
 
+        #region ctor
+        public GameScoreboardModel()
+        {
+            this.res = new RedundantExecutionSuppressor(() => { this.RefreshPlayerRanking(); this.Invoke(this.StateHasChanged); }, TimeSpan.FromSeconds(3));
+        }
+        #endregion ctor
+
+        #region Methods
         protected override Task OnInitAsync()
         {
             this.ShareModes = new List<UserModeDropDownItem>
@@ -261,24 +273,6 @@ namespace MiniatureGolf.Pages
             });
         }
 
-        protected void StartEdit(Course c)
-        {
-            if (c != null)
-            {
-                this.CurrentEditCourse = c;
-                this.Gamestate.CurrentCourseNumber = c.Number;
-
-                this.StateHasChanged();
-            }
-        }
-
-        protected void EndEdit()
-        {
-            this.CurrentEditCourse = null;
-
-            this.RefreshPlayerRanking();
-        }
-
         private void RefreshPlayerRanking()
         {
             List<Player> players = null;
@@ -290,12 +284,9 @@ namespace MiniatureGolf.Pages
             {
                 players = this.SelectedTeam.Players;
             }
-
-
+            
             if (this.Gamestate.Status >= Gamestatus.Running)
             {
-
-
                 this.RankedPlayers = players
                     .OrderByDescending(a => this.Gamestate.Courses.Count(b => b.PlayerHits[a.Id] != null)) // absteigend nach anzahl gespielter kurse
                     .ThenBy(a => this.Gamestate.Courses.Sum(b => b.PlayerHits[a.Id])) // aufsteigend nach summe der benötigten schläge
@@ -304,19 +295,6 @@ namespace MiniatureGolf.Pages
             else
             {
                 this.RankedPlayers = players.ToList();
-            }
-
-            if (this.CurrentUserMode == UserMode.Editor)
-            {
-                // fießer workaround, damit die EditButtonSpalte auf der richtigen position dargestellt wird (nur für den editor nötig)
-                this.ShowEditColumn = !this.ShowEditColumn;
-                this.StateHasChanged();
-                var _ = this.InvokeAsync(async () =>
-                {
-                    await Task.Delay(1);
-                    this.ShowEditColumn = !this.ShowEditColumn;
-                    this.StateHasChanged();
-                });
             }
         }
 
@@ -333,7 +311,7 @@ namespace MiniatureGolf.Pages
         }
 
         private void NavigateToGame(string gameid, UserMode mode, int teamNumber)
-        { 
+        {
             // böser hack!:
             // damit die uri im browser mit den parametern befüllt wird, direkt mal nen page-refresh aufrufen
             // kurioserweise muss dieser ca. 1000 ms verzögert werden, da sonst nichts? passiert.
@@ -395,12 +373,59 @@ namespace MiniatureGolf.Pages
         {
             this.SelectedTeam = this.Gamestate.Teams.SingleOrDefault(a => a.Number == selectedTeamNumber);
             this.RefreshPlayerRanking();
+        }
 
-            if (this.CurrentUserMode == UserMode.Editor && this.CurrentEditCourse != null)
+        protected List<Player> GetPlayersInView()
+        {
+            if (this.SelectedTeam == null)
             {
-                this.CurrentEditCourse = null;
+                return this.Gamestate.Teams.SelectMany(a => a.Players).ToList();
+            }
+            else
+            {
+                return this.SelectedTeam.Players.ToList();
             }
         }
+
+        protected Dictionary<string, int?> GetPlayerHitsInViewForCourse(Course c)
+        {
+            var players = this.GetPlayersInView().Select(a => a.Id);
+
+            return c.PlayerHits.Where(a => players.Contains(a.Key)).ToDictionary(a => a.Key, a => a.Value);
+        }
+
+        protected void IncreaseHitCount(Course c, Player p)
+        {
+            if (c.PlayerHits[p.Id] == null)
+            {
+                c.PlayerHits[p.Id] = 1;
+            }
+            else if (c.PlayerHits[p.Id] < 7)
+            {
+                c.PlayerHits[p.Id]++;
+            }
+            else if (c.PlayerHits[p.Id] == 7)
+            {
+                c.PlayerHits[p.Id] = null;
+            }
+
+            this.res.Push();
+
+            this.CurrentEditCourse = c;
+        }
+
+        protected void IncreasePar(Course c)
+        {
+            if (c.Par < 7)
+            {
+                c.Par++;
+            }
+            else
+            {
+                c.Par = 1;
+            }
+        }
+        #endregion Methods
 
         protected class UserModeDropDownItem
         {

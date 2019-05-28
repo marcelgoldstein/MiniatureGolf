@@ -25,6 +25,5 @@ namespace MiniatureGolf.Models
         public List<Team> Teams { get; set; } = new List<Team>();
         public List<Course> Courses { get; set; } = new List<Course>();
         public Gamestatus Status { get; set; } = Gamestatus.Created;
-        public int? CurrentCourseNumber { get; set; }
     }
 }

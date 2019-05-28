@@ -22,7 +22,7 @@
                 <TelerikButton Primary="true" OnClick="@(() => { this.CreateNewGame(); })" Enabled="@(this.Gamestate.Teams.SelectMany(a => a.Players).Count() > 0 || this.Gamestate.Courses.Count > 0)">new game</TelerikButton>
             }
 
-            @if (this.Gamestate.Teams.Count > 1)
+            @if (this.Gamestate.Teams.Count(a => a.Players.Any()) > 1)
             {
                 <TelerikDropDownList Data="@this.Gamestate.Teams.Where(a => a.Players.Count > 0)" bind-value="@this.SelectedTeamNumber" ValueField="@nameof(Team.Number)" TextField="@nameof(Team.Name)" 
                                      Height="38" Width="140" PopupHeight="200" TItem="@Team" TValue="@int" DefaultItem="@this.NullTeamSelection"
@@ -84,16 +84,16 @@
 
                     @if (context is Course c)
                     {
-                        if (c == this.CurrentEditCourse)
+                        if (this.CurrentUserMode == UserMode.Editor && c == this.CurrentEditCourse)
                         {
                             @*<div class="c-currentEditDot" />*@
-                            <span class="oi oi-aperture" style="color: darkred;"></span>
+                            <span class="oi oi-aperture" style="color: darkred;" onclick="@(() => this.CurrentEditCourse = null)"></span>
                         }
-                        else if (c.PlayerHits.Any() && c.PlayerHits.All(a => a.Value != null))
+                        else if (this.GetPlayerHitsInViewForCourse(c).Any() && this.GetPlayerHitsInViewForCourse(c).All(a => a.Value != null))
                         {
                             <span class="oi oi-check" style="color: green;" />
                         }
-                        else if (c.Number == this.Gamestate.CurrentCourseNumber)
+                        else if (this.GetPlayerHitsInViewForCourse(c).Any(a => a.Value != null))
                         {
                             <span class="oi oi-aperture" style="color: darkseagreen;"></span>
                         }
@@ -111,7 +111,14 @@
             <TelerikGridColumn Title="Par" Field="@nameof(Course.Par)" Editable="false" Width="40">
                 @*Title="@($"Par ({this.Gamestate.Courses.Where(a => a.PlayerHits.Any(b => b.Value != null)).Sum(a => a.Par)})")"*@
                 <Template>
-                    <div class="c-alignCenter">@((context as Course).Par)</div>
+                    @if (this.CurrentUserMode == UserMode.Editor)
+                    {
+                        <div class="c-alignCenter c-clickableCell" onclick="@(() => this.IncreasePar(context as Course))">@((context as Course).Par)</div>
+                    }
+                    else
+                    {
+                        <div class="c-alignCenter">@((context as Course).Par)</div>
+                    }
                 </Template>
             </TelerikGridColumn>
 
@@ -124,47 +131,25 @@
             {
                 <TelerikGridColumn Title="@($"{player.Name} ({this.Gamestate.Courses.Sum(a => a.PlayerHits[player.Id] ?? 0)})")">
                     <Template>
-                        <div class="c-alignCenter">
-                            @if (context is Course c)
+                        @if (context is Course c)
+                        {
+                            if (this.CurrentUserMode == UserMode.Editor)
                             {
-                                if (this.CurrentUserMode == UserMode.Editor && c == this.CurrentEditCourse)
-                                {
-                                    <TelerikButton Class="c-incellControl" OnClick="@(() => { if (c.PlayerHits[player.Id] == null) c.PlayerHits[player.Id] = 1; else if (c.PlayerHits[player.Id] < 7) c.PlayerHits[player.Id]++; })" Enabled="@(c.PlayerHits[player.Id] == null || c.PlayerHits[player.Id] < 7)">
-                                        <span class="c-alignCenter" style="width: 50px;">@c.PlayerHits[player.Id]</span>
-                                    </TelerikButton>
-
-                                    <TelerikButton Class="c-incellControl" OnClick="@(() => { c.PlayerHits[player.Id] = null; })" Enabled="@(c.PlayerHits[player.Id] != null)">
-                                        <span style="width: 30px;">
-                                            <span class="oi oi-circle-x" style="color: red;" onclick="@(() => { c.PlayerHits[player.Id] = null; })" />
-                                        </span>
-                                    </TelerikButton>
-                                }
-                                else
-                                {
+                                <div class="c-alignCenter c-clickableCell" onclick="@(() => this.IncreaseHitCount(context as Course, player))">
                                     <div class="c-ratingColorize" data-hitDiffToPar="@(c.PlayerHits[player.Id] - c.Par)">
                                         <div class="c-alignCenter">@(c.PlayerHits[player.Id])</div>
                                     </div>
-                                }
+                                </div>
                             }
-                        </div>
-                    </Template>
-                </TelerikGridColumn>
-            }
-
-            @if (this.ShowEditColumn && this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Running)
-            {
-                <TelerikGridColumn Title="" Editable="false" Width="90">
-                    <Template>
-                        @if ((context == this.CurrentEditCourse))
-                        {
-                            <TelerikButton Icon="save" Primary="true" Class="c-gridEditButton c-incellControl c-alignCenter" OnClick="@this.EndEdit">finish</TelerikButton>
-
+                            else
+                            {
+                                <div class="c-alignCenter">
+                                    <div class="c-ratingColorize" data-hitDiffToPar="@(c.PlayerHits[player.Id] - c.Par)">
+                                        <div class="c-alignCenter">@(c.PlayerHits[player.Id])</div>
+                                    </div>
+                                </div>
+                            }
                         }
-                        else
-                        {
-                            <TelerikButton Icon="edit" Primary="true" Class="c-gridEditButton c-incellControl c-alignCenter" OnClick="@(() => this.StartEdit(context as Course))">start</TelerikButton>
-                        }
-
                     </Template>
                 </TelerikGridColumn>
             }
@@ -254,6 +239,15 @@
         flex-direction: row;
         width: 100%;
         justify-content: space-between;
+    }
+
+    div.c-clickableCell {
+        height: 100%;
+        cursor: pointer;
+        -webkit-user-select: none;  /* Chrome all / Safari all */
+        -moz-user-select: none;     /* Firefox all */
+        -ms-user-select: none;      /* IE 10+ */
+        user-select: none;          /* Likely future */      
     }
 
     div.c-ratingColorize[data-hitDiffToPar="-6"] {
