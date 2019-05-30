@@ -78,6 +78,8 @@ namespace MiniatureGolf.Services
 
                 gs.Courses.Add(t);
 
+                gs.Courses = gs.Courses.ToList(); // hack!, damit eine Property-Änderung erkannt wird
+
                 return true;
             }
             else
@@ -93,6 +95,8 @@ namespace MiniatureGolf.Services
                 if (gs.Courses.Count > 0)
                 {
                     gs.Courses.RemoveAt(gs.Courses.Count - 1);
+
+                    gs.Courses = gs.Courses.ToList(); // hack!, damit eine Property-Änderung erkannt wird
                 }
 
                 return true;

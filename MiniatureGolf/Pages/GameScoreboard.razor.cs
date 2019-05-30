@@ -25,7 +25,6 @@ namespace MiniatureGolf.Pages
         public int CourseParNumberToAdd { get; set; } = 3;
 
         public List<Player> RankedPlayers { get; set; } = new List<Player>();
-        public decimal DataGridHeight { get; set; }
         public bool ShowColumns { get; set; } = true;
         public UserMode CurrentUserMode { get; set; }
         public Course CurrentEditCourse { get; set; }
@@ -111,7 +110,6 @@ namespace MiniatureGolf.Pages
                         }
                     }
 
-                    this.RefreshDataGridHeight();
                     this.RefreshPlayerRanking();
                 }
                 else
@@ -132,7 +130,6 @@ namespace MiniatureGolf.Pages
             {
                 while (keepRunningWhileTrueExpression())
                 {
-                    this.RefreshDataGridHeight();
                     this.RefreshPlayerRanking();
 
                     await this.Invoke(this.StateHasChanged);
@@ -241,39 +238,12 @@ namespace MiniatureGolf.Pages
 
         protected void AddCourse()
         {
-            if (this.GameService.TryAddCourse(this.Gamestate.Id, this.CourseParNumberToAdd))
-            {
-                this.RefreshDataGridHeight();
-            }
+            this.GameService.TryAddCourse(this.Gamestate.Id, this.CourseParNumberToAdd);
         }
 
         protected void RemoveCourse()
         {
-            if (this.GameService.TryRemoveCourse(this.Gamestate.Id))
-            {
-                this.RefreshDataGridHeight();
-            }
-        }
-
-        private void RefreshDataGridHeight()
-        {
-            if (this.Gamestate == null)
-            {
-                this.DataGridHeight = 26M * 3 + 37M;
-                return;
-            }
-
-            var rowCount = this.Gamestate.Courses.Count;
-
-            if (rowCount < 3)
-            {
-                rowCount = 3;
-            }
-
-            this.Invoke(() =>
-            {
-                this.DataGridHeight = 26M * rowCount + 37M;
-            });
+            this.GameService.TryRemoveCourse(this.Gamestate.Id);
         }
 
         private void RefreshPlayerRanking()
@@ -332,7 +302,6 @@ namespace MiniatureGolf.Pages
             if (this.Gamestate != null)
             {
                 this.Gamestate.Status = Gamestatus.Running;
-                this.RefreshDataGridHeight();
             }
         }
 
@@ -340,7 +309,6 @@ namespace MiniatureGolf.Pages
         {
             this.CurrentUserMode = newMode;
             this.RefreshPlayerRanking();
-            this.RefreshDataGridHeight();
 
             switch (newMode)
             {

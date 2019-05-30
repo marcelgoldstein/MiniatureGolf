@@ -17,19 +17,19 @@
 
 <TelerikGrid Data=@this.CurrentGames Height="600">
     <TelerikGridColumns>
-        <TelerikGridColumn Title="" Editable="false">
+        <TelerikGridColumn Title="" Editable="false" Width="140px">
             <Template>
                 <a class="btn btn-info" href="@($"/MiniatureGolf/{(context as Gamestate).Id}/{(int)UserMode.SpectatorReadOnly}/0")" role="button"><span class="oi oi-link-intact">  open game</span></a>
             </Template>
         </TelerikGridColumn>
 
-        <TelerikGridColumn Title="Starttime" Editable="false">
+        <TelerikGridColumn Title="Starttime" Editable="false" Width="180px">
             <Template>
-                <div>@((context as Gamestate).CreationTime.ToLocalTime())</div>
+                <div>@((context as Gamestate).CreationTime.ToLocalTime().ToString("dd. MMMM yyyy HH:mm"))</div>
             </Template>
         </TelerikGridColumn>
 
-        <TelerikGridColumn Title="Playercount" Editable="false">
+        <TelerikGridColumn Title="Playercount" Editable="false" Width="110px">
             <Template>
                 <div>@($"{(context as Gamestate).Teams.SelectMany(a => a.Players).Count():#00}")</div>
             </Template>
@@ -37,7 +37,7 @@
 
         <TelerikGridColumn Title="Players" Editable="false">
             <Template>
-                <div>@(string.Join(", ", (context as Gamestate).Teams.SelectMany(a => a.Players).Select(a => a.Name)))</div>
+                <div>@(string.Join(", ", this.GetPreparedPlayersForGame(context as Gamestate)))</div>
             </Template>
         </TelerikGridColumn>
     </TelerikGridColumns>
