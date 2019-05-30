@@ -11,10 +11,6 @@ namespace MiniatureGolf.Pages
 {
     public class GameScoreboardModel : ComponentBase
     {
-        #region Variables
-        private readonly RedundantExecutionSuppressor res; // wird verwendet, um eine Verzögerung der Aktualisierung zu bewirken, wenn der Editierer Punkte geändert hat. 
-        #endregion Variables
-
         #region Properties
         [Inject] public GameService GameService { get; private set; }
         [Inject] protected IUriHelper UriHelper { get; private set; }
@@ -48,12 +44,21 @@ namespace MiniatureGolf.Pages
         public Team NullTeamSelection { get; set; } = new Team { Number = 0 };
 
         public bool IsNotificationWindowVisible { get; set; }
+
+        /// <summary>
+        /// Wird verwendet, um eine Verzögerung der Aktualisierung zu bewirken, wenn der Editierer Punkte geändert hat. 
+        /// </summary>
+        protected RedundantExecutionSuppressor AutoRefreshHelper { private set; get; }
         #endregion Properties
 
         #region ctor
         public GameScoreboardModel()
         {
-            this.res = new RedundantExecutionSuppressor(() => { this.RefreshPlayerRanking(); this.Invoke(this.StateHasChanged); }, TimeSpan.FromSeconds(3));
+            this.AutoRefreshHelper = new RedundantExecutionSuppressor(() => { this.RefreshPlayerRanking(); this.Invoke(this.StateHasChanged); }, TimeSpan.FromSeconds(3));
+            this.AutoRefreshHelper.ProgressChanged += (sender, e) =>
+            {
+                this.Invoke(this.StateHasChanged);
+            };
         }
         #endregion ctor
 
@@ -407,7 +412,7 @@ namespace MiniatureGolf.Pages
                 c.PlayerHits[p.Id] = null;
             }
 
-            this.res.Push();
+            this.AutoRefreshHelper.Push();
 
             this.CurrentEditCourse = c;
         }
