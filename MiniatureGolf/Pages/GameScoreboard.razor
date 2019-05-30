@@ -4,6 +4,7 @@
 @page "/MiniatureGolf/{GameId}/{Mode}/{TeamNumber}"
 
 @using MiniatureGolf.Models
+@using Telerik.Blazor;
 
 @inherits MiniatureGolf.Pages.GameScoreboardModel
 
@@ -24,9 +25,8 @@
 
             @if (this.Gamestate.Teams.Count(a => a.Players.Any()) > 1)
             {
-                <TelerikDropDownList Data="@this.Gamestate.Teams.Where(a => a.Players.Count > 0)" bind-value="@this.SelectedTeamNumber" ValueField="@nameof(Team.Number)" TextField="@nameof(Team.Name)" 
-                                     Height="38" Width="140" PopupHeight="200" TItem="@Team" TValue="@int" DefaultItem="@this.NullTeamSelection"
-                                     />
+                <TelerikDropDownList Data="@this.Gamestate.Teams.Where(a => a.Players.Count > 0)" bind-value="@this.SelectedTeamNumber" ValueField="@nameof(Team.Number)" TextField="@nameof(Team.Name)"
+                                     Height="38" Width="140" PopupHeight="200" TItem="@Team" TValue="@int" DefaultItem="@this.NullTeamSelection" />
             }
         </span>
 
@@ -70,6 +70,24 @@
 
                 <TelerikButton Primary="true" OnClick="@(this.StartGame)" Enabled="@((this.Gamestate.Teams.SelectMany(a => a.Players).Count() > 0 && this.Gamestate.Courses.Count > 0))">start</TelerikButton>
             </div>
+        </div>
+    }
+
+    @if (this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Running)
+    {
+        <div class="c-flexContainerWithCenteredItem">
+            <TelerikAnimationContainer AnimationType="@AnimationType.PushDown" AnimationDuration="300" ShowDelay="100" Visible="@this.AutoRefreshHelper.IsRunning">
+                <span class="c-toastMessage">auto-refresh in </span>
+                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.9 ? "c-opacityAnimationHidden" : "")">😜</span>
+                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.8 ? "c-opacityAnimationHidden" : "")">😜</span>
+                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.7 ? "c-opacityAnimationHidden" : "")">😜</span>
+                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.6 ? "c-opacityAnimationHidden" : "")">😜</span>
+                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.5 ? "c-opacityAnimationHidden" : "")">😜</span>
+                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.4 ? "c-opacityAnimationHidden" : "")">😜</span>
+                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.3 ? "c-opacityAnimationHidden" : "")">😜</span>
+                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.2 ? "c-opacityAnimationHidden" : "")">😜</span>
+                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.1 ? "c-opacityAnimationHidden" : "")">😜</span>
+            </TelerikAnimationContainer>
         </div>
     }
 </div>
@@ -241,6 +259,19 @@
         justify-content: space-between;
     }
 
+    div.c-flexContainerWithCenteredItem {
+        display: flex;
+        align-items: center; /*vertical*/
+        justify-content: center; /*horizonntal*/
+    }
+
+    span.c-toastMessage {
+        color: green;
+        font-weight: bold;
+        opacity: 0.5;
+        font-size: large;
+    }
+
     div.c-clickableCell {
         height: 100%;
         cursor: pointer;
@@ -248,6 +279,13 @@
         -moz-user-select: none;     /* Firefox all */
         -ms-user-select: none;      /* IE 10+ */
         user-select: none;          /* Likely future */      
+    }
+
+    .c-opacityAnimation {
+        transition: opacity 600ms ease-out;
+    }
+    .c-opacityAnimationHidden {
+        opacity: 0;
     }
 
     div.c-ratingColorize[data-hitDiffToPar="-6"] {
