@@ -78,15 +78,11 @@
         <div class="c-flexContainerWithCenteredItem" style="margin-top: 10px;">
             <TelerikAnimationContainer AnimationType="@AnimationType.PushDown" AnimationDuration="300" ShowDelay="100" Visible="@this.AutoRefreshHelper.IsRunning">
                 <span class="c-toastMessage">auto-refresh in </span>
-                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.9 ? "c-opacityAnimationHidden" : "")">😜</span>
-                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.8 ? "c-opacityAnimationHidden" : "")">😜</span>
-                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.7 ? "c-opacityAnimationHidden" : "")">😜</span>
-                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.6 ? "c-opacityAnimationHidden" : "")">😜</span>
-                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.5 ? "c-opacityAnimationHidden" : "")">😜</span>
-                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.4 ? "c-opacityAnimationHidden" : "")">😜</span>
-                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.3 ? "c-opacityAnimationHidden" : "")">😜</span>
-                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.2 ? "c-opacityAnimationHidden" : "")">😜</span>
-                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.1 ? "c-opacityAnimationHidden" : "")">😜</span>
+                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.9 ? "c-opacityAnimationHidden" : "")" style="font-size: 1.8em;">@this.AutoRefreshEmoji</span>
+                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.7 ? "c-opacityAnimationHidden" : "")" style="font-size: 1.6em;">@this.AutoRefreshEmoji</span>
+                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.5 ? "c-opacityAnimationHidden" : "")" style="font-size: 1.4em;">@this.AutoRefreshEmoji</span>
+                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.3 ? "c-opacityAnimationHidden" : "")" style="font-size: 1.2em;">@this.AutoRefreshEmoji</span>
+                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.1 ? "c-opacityAnimationHidden" : "")" style="font-size: 1.0em;">@this.AutoRefreshEmoji</span>
             </TelerikAnimationContainer>
         </div>
     }
