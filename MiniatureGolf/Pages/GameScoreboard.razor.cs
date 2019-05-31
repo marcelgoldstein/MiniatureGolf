@@ -11,6 +11,10 @@ namespace MiniatureGolf.Pages
 {
     public class GameScoreboardModel : ComponentBase
     {
+        #region Variables
+        private readonly List<string> autoRefreshEmojis = new List<string> { "🐒", "🦍", "🐩", "🐕", "🐈", "🐅", "🐆", "🐎", "🦌", "🦏", "🦛", "🐂", "🐃", "🐄", "🐖", "🐏", "🐑", "🐐", "🐪", "🐫", "🦙", "🦘", "🦡", "🐘", "🐁", "🐀", "🦔", "🐇", "🐿", "🦎", "🐊", "🐢", "🐍", "🐉", "🦕", "🦖", "🦈", "🐬", "🐳", "🐋", "🐟", "🐠", "🐡", "🦐", "🦑", "🐙", "🦞", "🦀", "🐚", "🦆", "🐓", "🦃", "🦅", "🕊", "🦢", "🦜", "🦚", "🦉", "🐦", "🐧", "🐥", "🐤", "🐣", "🦇", "🦋", "🐌", "🐛", "🦟", "🦗", "🐜", "🐝", "🐞", "🦂", "🕷" };
+        #endregion Variables
+
         #region Properties
         [Inject] public GameService GameService { get; private set; }
         [Inject] protected IUriHelper UriHelper { get; private set; }
@@ -48,6 +52,8 @@ namespace MiniatureGolf.Pages
         /// Wird verwendet, um eine Verzögerung der Aktualisierung zu bewirken, wenn der Editierer Punkte geändert hat. 
         /// </summary>
         protected RedundantExecutionSuppressor AutoRefreshHelper { private set; get; }
+
+        public string AutoRefreshEmoji { get; set; } = "😜";
         #endregion Properties
 
         #region ctor
@@ -380,6 +386,7 @@ namespace MiniatureGolf.Pages
                 c.PlayerHits[p.Id] = null;
             }
 
+            this.RandoPickAutoRefreshEmoji();
             this.AutoRefreshHelper.Push();
 
             this.CurrentEditCourse = c;
@@ -411,6 +418,14 @@ namespace MiniatureGolf.Pages
                 return false;
 
             return true;
+        }
+
+        private void RandoPickAutoRefreshEmoji()
+        {
+            var rnd = new Random();
+            var emoji = this.autoRefreshEmojis[rnd.Next(0, this.autoRefreshEmojis.Count)];
+
+            this.AutoRefreshEmoji = emoji;
         }
         #endregion Methods
 
