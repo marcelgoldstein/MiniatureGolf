@@ -75,7 +75,7 @@
 
     @if (this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Running)
     {
-        <div class="c-flexContainerWithCenteredItem">
+        <div class="c-flexContainerWithCenteredItem" style="margin-top: 10px;">
             <TelerikAnimationContainer AnimationType="@AnimationType.PushDown" AnimationDuration="300" ShowDelay="100" Visible="@this.AutoRefreshHelper.IsRunning">
                 <span class="c-toastMessage">auto-refresh in </span>
                 <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.9 ? "c-opacityAnimationHidden" : "")">😜</span>
@@ -92,88 +92,111 @@
     }
 </div>
 
-<TelerikGrid Data=@this.Gamestate.Courses >
-
-    <TelerikGridColumns>
-        @if (this.ShowColumns)
-        {
-            <TelerikGridColumn Title="" Editable="false" Width="18">
-                <Template>
-
-                    @if (context is Course c)
-                    {
-                        if (this.CurrentUserMode == UserMode.Editor && c == this.CurrentEditCourse)
-                        {
-                            @*<div class="c-currentEditDot" />*@
-                            <span class="oi oi-aperture" style="color: darkred;" onclick="@(() => this.CurrentEditCourse = null)"></span>
-                        }
-                        else if (this.GetPlayerHitsInViewForCourse(c).Any() && this.GetPlayerHitsInViewForCourse(c).All(a => a.Value != null))
-                        {
-                            <span class="oi oi-check" style="color: green;" />
-                        }
-                        else if (this.GetPlayerHitsInViewForCourse(c).Any(a => a.Value != null))
-                        {
-                            <span class="oi oi-aperture" style="color: darkseagreen;"></span>
-                        }
-                    }
-                </Template>
-            </TelerikGridColumn>
-
-
-            <TelerikGridColumn Title="No." Field="@nameof(Course.Number)" Editable="false" Width="40">
-                <Template>
-                    <div class="c-alignCenter">@((context as Course).Number)</div>
-                </Template>
-            </TelerikGridColumn>
-
-            <TelerikGridColumn Title="Par" Field="@nameof(Course.Par)" Editable="false" Width="40">
-                @*Title="@($"Par ({this.Gamestate.Courses.Where(a => a.PlayerHits.Any(b => b.Value != null)).Sum(a => a.Par)})")"*@
-                <Template>
-                    @if (this.CurrentUserMode == UserMode.Editor)
-                    {
-                        <div class="c-alignCenter c-clickableCell" onclick="@(() => this.IncreasePar(context as Course))">@((context as Course).Par)</div>
-                    }
-                    else
-                    {
-                        <div class="c-alignCenter">@((context as Course).Par)</div>
-                    }
-                </Template>
-            </TelerikGridColumn>
-
-            @if (this.Gamestate.Teams.SelectMany(a => a.Players).Count() == 0)
+<div style="margin-top: -10px;">
+    <TelerikGrid Data=@this.Gamestate.Courses>
+        <TelerikGridColumns>
+            @if (this.ShowColumns)
             {
-                <TelerikGridColumn Title="" Field="" />
-            }
-
-            @foreach (var player in this.RankedPlayers)
-            {
-                <TelerikGridColumn Title="@($"{player.Name} ({this.Gamestate.Courses.Sum(a => a.PlayerHits[player.Id] ?? 0)})")">
+                <TelerikGridColumn Title="" Editable="false" Width="22">
                     <Template>
+
                         @if (context is Course c)
                         {
                             if (this.CurrentUserMode == UserMode.Editor)
                             {
-                                <div class="c-alignCenter c-clickableCell" onclick="@(() => this.IncreaseHitCount(context as Course, player))">
-                                    <div class="c-ratingColorize" data-hitDiffToPar="@(c.PlayerHits[player.Id] - c.Par)">
-                                        <div class="c-alignCenter">@(c.PlayerHits[player.Id])</div>
-                                    </div>
+                                <div onclick="@(() => { this.CurrentEditCourse = (this.CurrentEditCourse == c ? null : c); })" class="c-clickableCell">
+                                    @if (c == this.CurrentEditCourse)
+                                    {
+                                        <span class="oi oi-aperture c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" style="color: darkred;"></span>
+                                    }
+                                    else if (this.GetPlayerHitsInViewForCourse(c).Any() && this.GetPlayerHitsInViewForCourse(c).All(a => a.Value != null))
+                                    {
+                                        <span class="oi oi-check c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" style="color: green;" />
+                                    }
+                                    else if (this.GetPlayerHitsInViewForCourse(c).Any(a => a.Value != null))
+                                    {
+                                        <span class="oi oi-aperture c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" style="color: darkseagreen;"></span>
+                                    }
                                 </div>
                             }
                             else
                             {
-                                <div class="c-alignCenter">
-                                    <div class="c-ratingColorize" data-hitDiffToPar="@(c.PlayerHits[player.Id] - c.Par)">
-                                        <div class="c-alignCenter">@(c.PlayerHits[player.Id])</div>
-                                    </div>
+                                <div>
+                                    @if (this.GetPlayerHitsInViewForCourse(c).Any() && this.GetPlayerHitsInViewForCourse(c).All(a => a.Value != null))
+                                    {
+                                        <span class="oi oi-check c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" style="color: green;" />
+                                    }
+                                    else if (this.GetPlayerHitsInViewForCourse(c).Any(a => a.Value != null))
+                                    {
+                                        <span class="oi oi-aperture c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" style="color: darkseagreen;"></span>
+                                    }
                                 </div>
                             }
                         }
                     </Template>
                 </TelerikGridColumn>
+
+
+                <TelerikGridColumn Title="No." Field="@nameof(Course.Number)" Editable="false" Width="40">
+                    <Template>
+                        @if (context is Course c)
+                        {
+                            <div class="c-alignCenter c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")">@((context as Course).Number)</div>
+                        }
+                    </Template>
+                </TelerikGridColumn>
+
+                <TelerikGridColumn Title="Par" Field="@nameof(Course.Par)" Editable="false" Width="40">
+                    <Template>
+                        @if (context is Course c)
+                        {
+                            if (this.CurrentUserMode == UserMode.Editor)
+                            {
+                                <div class="c-alignCenter c-clickableCell c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" onclick="@(() => this.IncreasePar(context as Course))">@((context as Course).Par)</div>
+                            }
+                            else
+                            {
+                                <div class="c-alignCenter c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")">@((context as Course).Par)</div>
+                            }
+                        }
+                    </Template>
+                </TelerikGridColumn>
+
+                @if (this.Gamestate.Teams.SelectMany(a => a.Players).Count() == 0)
+                {
+                    <TelerikGridColumn Title="" Field="" />
+                }
+
+                @foreach (var player in this.RankedPlayers)
+                {
+                    <TelerikGridColumn Title="@($"{player.Name} ({this.Gamestate.Courses.Sum(a => a.PlayerHits[player.Id] ?? 0)})")">
+                        <Template>
+                            @if (context is Course c)
+                            {
+                                if (this.CurrentUserMode == UserMode.Editor)
+                                {
+                                    <div class="c-alignCenter c-clickableCell c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" onclick="@(() => this.IncreaseHitCount(context as Course, player))">
+                                        <div class="c-ratingColorize" data-hitDiffToPar="@(c.PlayerHits[player.Id] - c.Par)">
+                                            <div class="c-alignCenter">@(c.PlayerHits[player.Id])</div>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="c-alignCenter c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")">
+                                        <div class="c-ratingColorize" data-hitDiffToPar="@(c.PlayerHits[player.Id] - c.Par)">
+                                            <div class="c-alignCenter">@(c.PlayerHits[player.Id])</div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </Template>
+                    </TelerikGridColumn>
+                }
             }
-        }
-    </TelerikGridColumns>
-</TelerikGrid>
+        </TelerikGridColumns>
+    </TelerikGrid>
+</div>
 
 <TelerikWindow Width="420" Height="260" Centered="true" Visible="@IsNotificationWindowVisible" Modal="true" >
     <TelerikWindowTitle>
@@ -218,17 +241,6 @@
     .c-alignCenter {
         text-align: center;
     }
-
-    /*div.c-currentEditDot {
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        border-width: medium;
-        border-style: solid;
-        border-color: slategray;
-        background-color: darkred;
-        text-align: center;
-    }*/
 
     .c-gridEditButton {
         width: 85px;
@@ -288,60 +300,72 @@
         opacity: 0;
     }
 
+    div.c-ratingColorize {
+        transition: background-color 300ms ease-in-out;
+    }
+
     div.c-ratingColorize[data-hitDiffToPar="-6"] {
-        background-color: rgba(0,150,0,0.6);
+        background-color: rgba(0,150,0,0.8);
     }
 
     div.c-ratingColorize[data-hitDiffToPar="-5"] {
-        background-color: rgba(0,150,0,0.5);
+        background-color: rgba(0,150,0,0.7);
     }
 
     div.c-ratingColorize[data-hitDiffToPar="-4"] {
-        background-color: rgba(0,150,0,0.4);
+        background-color: rgba(0,150,0,0.6);
     }
 
     div.c-ratingColorize[data-hitDiffToPar="-3"] {
-        background-color: rgba(0,150,0,0.3);
+        background-color: rgba(0,150,0,0.5);
     }
 
     div.c-ratingColorize[data-hitDiffToPar="-2"] {
-        background-color: rgba(0,150,0,0.2);
+        background-color: rgba(0,150,0,0.4);
     }
 
     div.c-ratingColorize[data-hitDiffToPar="-1"] {
-        background-color: rgba(0,150,0,0.1);
+        background-color: rgba(0,150,0,0.3);
     }
 
     div.c-ratingColorize[data-hitDiffToPar="0"] {
-        background-color: rgba(0,0,0,0.1);
+        background-color: rgba(0,0,0,0.3);
     }
 
     div.c-ratingColorize[data-hitDiffToPar="1"] {
-        background-color: rgba(150,0,0,0.1);
-    }
-
-    div.c-ratingColorize[data-hitDiffToPar="2"] {
-        background-color: rgba(150,0,0,0.2);
-    }
-
-    div.c-ratingColorize[data-hitDiffToPar="3"] {
         background-color: rgba(150,0,0,0.3);
     }
 
-    div.c-ratingColorize[data-hitDiffToPar="4"] {
+    div.c-ratingColorize[data-hitDiffToPar="2"] {
         background-color: rgba(150,0,0,0.4);
     }
 
-    div.c-ratingColorize[data-hitDiffToPar="5"] {
+    div.c-ratingColorize[data-hitDiffToPar="3"] {
         background-color: rgba(150,0,0,0.5);
     }
 
-    div.c-ratingColorize[data-hitDiffToPar="6"] {
+    div.c-ratingColorize[data-hitDiffToPar="4"] {
         background-color: rgba(150,0,0,0.6);
+    }
+
+    div.c-ratingColorize[data-hitDiffToPar="5"] {
+        background-color: rgba(150,0,0,0.7);
+    }
+
+    div.c-ratingColorize[data-hitDiffToPar="6"] {
+        background-color: rgba(150,0,0,0.8);
     }
 
     tbody tr.k-master-row td[role=gridcell] {
         padding: 1px;
-        height:26px;
+        height: 26px;
+    }
+
+    .c-loweredOpacityAnimation {
+        transition: opacity 400ms ease-out;
+    }
+
+    .c-loweredOpacity {
+        opacity: 0.3;
     }
 </style>
