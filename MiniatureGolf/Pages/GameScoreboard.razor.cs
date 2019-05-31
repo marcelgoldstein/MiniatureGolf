@@ -395,6 +395,22 @@ namespace MiniatureGolf.Pages
             {
                 c.Par = 1;
             }
+
+            this.CurrentEditCourse = c;
+        }
+
+        protected bool RowShouldBeDisplayedTransparently(Course c)
+        {
+            if (this.CurrentUserMode != UserMode.Editor)
+                return false;
+
+            if (this.CurrentEditCourse == null)
+                return false;
+
+            if (this.CurrentEditCourse == c)
+                return false;
+
+            return true;
         }
         #endregion Methods
 
