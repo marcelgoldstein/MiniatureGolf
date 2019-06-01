@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MiniatureGolf.Models
 {
@@ -20,11 +21,57 @@ namespace MiniatureGolf.Models
 
     public class Gamestate
     {
+        #region Properties
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public DateTime CreationTime { get; set; } = DateTime.UtcNow;
+        public DateTime? StartTime { get; set; }
+        public DateTime? FinishTime { get; set; }
 
         public List<Team> Teams { get; set; } = new List<Team>();
         public List<Course> Courses { get; set; } = new List<Course>();
+
+        public int? CurrentCourseNumber { get; set; }
+
         public Gamestatus Status { get; set; } = Gamestatus.Created;
+        public string StatusText => Enum.GetName(typeof(Gamestatus), this.Status).ToLower();
+        public string PlayersText => $"{this.Teams.SelectMany(a => a.Players).Count():#00}:    {string.Join(", ", this.GetPreparedPlayersForGame(this))}";
+        public string Time => this.GetTimeText();
+        #endregion Properties
+
+        #region Events
+        public event StateChangedHandler StateChanged;
+        public delegate void StateChangedHandler(object sender, object caller, string context);
+
+        public void RaiseStateChanged(object caller, string context) => this.StateChanged?.Invoke(this, caller, context);
+        #endregion Events
+
+        #region Methods
+        private List<string> GetPreparedPlayersForGame(Gamestate gs)
+        {
+            var players = gs.Teams.SelectMany(a => a.Players)
+                    .OrderByDescending(a => gs.Courses.Count(b => b.PlayerHits[a.Id] != null)) // absteigend nach anzahl gespielter kurse
+                    .ThenBy(a => gs.Courses.Sum(b => b.PlayerHits[a.Id])) // aufsteigend nach summe der benötigten schläge
+                    .ToList();
+
+            var playerStrings = players.Select(a => $"{a.Name} ({gs.Courses.Sum(b => b.PlayerHits[a.Id])})").ToList();
+
+            return playerStrings;
+        }
+
+        private string GetTimeText()
+        {
+            if (this.StartTime == null)
+                return string.Empty;
+
+            if (this.StartTime?.Date != this.FinishTime?.Date)
+            {
+                return $"{this.StartTime?.ToLocalTime().ToString("dd.MM.yy HH:mm")} - {this.FinishTime?.ToLocalTime().ToString("dd.MM.yy HH:mm")}";
+            }
+            else
+            { // start und ende haben den gleichen tag, dann beim ende das datum weglassen und nur die uhrzeit anzeigen
+                return $"{this.StartTime?.ToLocalTime().ToString("dd.MM.yy HH:mm")} - {this.FinishTime?.ToLocalTime().ToString("HH:mm")}";
+            }
+        }
+        #endregion Methods
     }
 }
