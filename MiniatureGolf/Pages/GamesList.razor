@@ -1,0 +1,43 @@
+﻿@page "/GamesList"
+
+@using MiniatureGolf.Models
+@using MiniatureGolf.Services
+
+@inherits MiniatureGolf.Pages.GamesListModel
+
+<h1>list of games</h1>
+
+<div class="c-flexContainer">
+    <TelerikButton Class="c-flexItem c-flexItemFirst" OnClick="@(() => { this.SelectedDateFilter = DateFilter.Day; this.LoadGames(); })">day</TelerikButton>
+    <TelerikButton Class="c-flexItem" OnClick="@(() => { this.SelectedDateFilter = DateFilter.Week; this.LoadGames(); })">week</TelerikButton>
+    <TelerikButton Class="c-flexItem" OnClick="@(() => { this.SelectedDateFilter = DateFilter.Month; this.LoadGames(); })">month</TelerikButton>
+    <TelerikButton Class="c-flexItem" OnClick="@(() => { this.SelectedDateFilter = DateFilter.Quarter; this.LoadGames(); })">quarter</TelerikButton>
+    <TelerikButton Class="c-flexItem c-flexItemLast" OnClick="@(() => { this.SelectedDateFilter = DateFilter.Year; this.LoadGames(); })">year</TelerikButton>
+</div>
+
+<div>
+    <TelerikDropDownList Data="@this.FilterStates" bind-value="@this.SelectedFilterStateId" ValueField="@nameof(FilterState.Id)" TextField="@nameof(FilterState.Name)" Height="38" Width="110px" PopupHeight="90" TItem="@FilterState" TValue="@int" />
+    <TelerikTextBox Label="search for player" bind-value="@this.PlayerFilterInput" />
+</div>
+
+<div style="margin-top: 10px; min-height: 235px; height: calc(100vh - 250px);">
+    <TelerikGrid Data=@this.CurrentGames Height="100%" Sortable="true" >
+        <TelerikGridColumns>
+            <TelerikGridColumn Title="Status" Editable="false" Width="130px" Field="@nameof(Gamestate.Time)">
+                <Template>
+                    @if (context is Gamestate gs)
+                    {
+                        <a class="btn @(this.GetButtonClassForState(gs))" href="@($"/MiniatureGolf/{gs.Id}/{(int)UserMode.SpectatorReadOnly}/0")" role="button" style="width: 100%;">@(gs.StatusText)</a>
+                    }
+                </Template>
+            </TelerikGridColumn>
+
+            <TelerikGridColumn Title="Time" Editable="false" Width="190px" Field="@nameof(Gamestate.Time)" />
+
+            <TelerikGridColumn Title="Players" Editable="false" Field="@nameof(Gamestate.PlayersText)" />
+        </TelerikGridColumns>
+    </TelerikGrid>
+</div>
+
+<link href="/css/styles/GamesList.min.css" rel="stylesheet" />
+                    

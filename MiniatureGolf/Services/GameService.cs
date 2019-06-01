@@ -44,7 +44,7 @@ namespace MiniatureGolf.Services
             }
         }
 
-        public List<Gamestate> GetGames(Gamestatus status, DateFilter dateFilter)
+        public List<Gamestate> GetGames(Gamestatus? status, DateFilter dateFilter)
         {
             var compareDate = dateFilter switch
             {
@@ -57,7 +57,7 @@ namespace MiniatureGolf.Services
             };
 
             var games = this.Games
-                .Where(a => a.Value.Status == status
+                .Where(a => (status == null || a.Value.Status == status)
                     && a.Value.CreationTime.ToLocalTime() >= compareDate)
                 .Select(a => a.Value);
 

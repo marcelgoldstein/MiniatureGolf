@@ -1,4 +1,5 @@
-﻿@page "/MiniatureGolf"
+﻿@page "/"
+@page "/MiniatureGolf"
 @page "/MiniatureGolf/{GameId}"
 @page "/MiniatureGolf/{GameId}/{Mode}"
 @page "/MiniatureGolf/{GameId}/{Mode}/{TeamNumber}"
@@ -8,19 +9,41 @@
 
 @inherits MiniatureGolf.Pages.GameScoreboardModel
 
-<h1>MiniatureGolf scoreboard</h1>
+<h1>scoreboard</h1>
 
 <div class="c-settingsBox">
     <div class="c-flexHorizontalContainer">
         <span class="c-flexHorizontalContainer">
             @if (this.CurrentUserMode == UserMode.Editor || this.CurrentUserMode == UserMode.Spectator)
             {
-                <TelerikButton OnClick="@(this.ToggleUserMode)">editor / spectator</TelerikButton>
+                <TelerikButton OnClick="@(this.ToggleUserMode)">
+                    @if (this.CurrentUserMode == UserMode.Editor)
+                    {
+                        <span><strong>editor</strong> / spectator</span>
+                    }
+                    else if (this.CurrentUserMode == UserMode.Spectator)
+                    {
+                        <span>editor / <strong>spectator</strong></span>
+                    }
+                </TelerikButton>
             }
 
             @if (this.CurrentUserMode == UserMode.Editor)
             {
-                <TelerikButton Primary="true" OnClick="@(() => { this.CreateNewGame(); })" Enabled="@(this.Gamestate.Teams.SelectMany(a => a.Players).Count() > 0 || this.Gamestate.Courses.Count > 0)">new game</TelerikButton>
+                if (this.Gamestate.Status == Gamestatus.Created || this.Gamestate.Status == Gamestatus.Configuring || this.Gamestate.Status == Gamestatus.Finished)
+                {
+                    <button type="button" class="btn btn-primary" disabled="@(!(this.Gamestate.Teams.SelectMany(a => a.Players).Count() > 0 || this.Gamestate.Courses.Count > 0))" onclick="@(this.CreateNewGame)">new game</button>
+                }
+
+                if (this.Gamestate.Status == Gamestatus.Configuring)
+                {
+                    <button type="button" class="btn btn-success" disabled="@(!(this.Gamestate.Teams.SelectMany(a => a.Players).Count() > 0 && this.Gamestate.Courses.Count > 0))" onclick="@(this.StartGame)">start game</button>
+                }
+
+                if (this.Gamestate.Status == Gamestatus.Running)
+                {
+                    <button type="button" class="btn btn-warning" onclick="@(this.FinishGame)">finish game</button>
+                }
             }
 
             @if (this.Gamestate.Teams.Count(a => a.Players.Any()) > 1)
@@ -33,7 +56,7 @@
         <span class="c-flexHorizontalContainer c-flexHorizontalChildRight">
             @if (this.CurrentUserMode == UserMode.Editor)
             {
-                <TelerikDropDownList Data="@this.ShareModes" bind-value="@this.SelectedShareMode" ValueField="@nameof(UserModeDropDownItem.ModeId)" TextField="@nameof(UserModeDropDownItem.Name)" Height="38" Width="160" PopupHeight="90" TItem="@UserModeDropDownItem" TValue="@int" />
+                <TelerikDropDownList Data="@this.ShareModes" bind-value="@this.SelectedShareMode" ValueField="@nameof(UserModeDropDownItem.ModeId)" TextField="@nameof(UserModeDropDownItem.Name)" Height="38" Width="160px" PopupHeight="90" TItem="@UserModeDropDownItem" TValue="@int" />
             }
             <a class="btn btn-light c-flexHorizontalChildRight" href="@($"/MiniatureGolf/{this.Gamestate.Id}/{(int)this.SelectedShareMode}/{this.SelectedTeamNumber}")" role="button"><span class="oi oi-link-intact">  share</span></a>
         </span>
@@ -67,29 +90,27 @@
                     </span>
                     <TelerikButton Class="c-increaseButton" OnClick="@this.AddCourse">+</TelerikButton>
                 </span>
-
-                <TelerikButton Primary="true" OnClick="@(this.StartGame)" Enabled="@((this.Gamestate.Teams.SelectMany(a => a.Players).Count() > 0 && this.Gamestate.Courses.Count > 0))">start</TelerikButton>
             </div>
         </div>
     }
 
-    @if (this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Running)
-    {
-        <div class="c-flexContainerWithCenteredItem" style="margin-top: 10px;">
+    <div class="c-flexContainerWithCenteredItem" style="margin-top: 10px;">
+        @if (this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Running)
+        {
             <TelerikAnimationContainer AnimationType="@AnimationType.PushDown" AnimationDuration="300" ShowDelay="100" Visible="@this.AutoRefreshHelper.IsRunning">
                 <span class="c-toastMessage">auto-refresh in </span>
-                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.9 ? "c-opacityAnimationHidden" : "")" style="font-size: 1.8em;">@this.AutoRefreshEmoji</span>
-                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.7 ? "c-opacityAnimationHidden" : "")" style="font-size: 1.6em;">@this.AutoRefreshEmoji</span>
-                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.5 ? "c-opacityAnimationHidden" : "")" style="font-size: 1.4em;">@this.AutoRefreshEmoji</span>
-                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.3 ? "c-opacityAnimationHidden" : "")" style="font-size: 1.2em;">@this.AutoRefreshEmoji</span>
+                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.9 ? "c-opacityAnimationHidden" : "")" style="font-size: 1.4em;">@this.AutoRefreshEmoji</span>
+                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.7 ? "c-opacityAnimationHidden" : "")" style="font-size: 1.3em;">@this.AutoRefreshEmoji</span>
+                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.5 ? "c-opacityAnimationHidden" : "")" style="font-size: 1.2em;">@this.AutoRefreshEmoji</span>
+                <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.3 ? "c-opacityAnimationHidden" : "")" style="font-size: 1.1em;">@this.AutoRefreshEmoji</span>
                 <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.1 ? "c-opacityAnimationHidden" : "")" style="font-size: 1.0em;">@this.AutoRefreshEmoji</span>
             </TelerikAnimationContainer>
-        </div>
-    }
+        }
+    </div>
 </div>
 
-<div style="margin-top: -10px;">
-    <TelerikGrid Data=@this.Gamestate.Courses>
+<div style="position: relative; margin-top: -10px; min-height: 167px; height: calc(100vh - @((this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Configuring) ? "250" : "193")px);">
+    <TelerikGrid Data=@this.Gamestate.Courses Height="100%">
         <TelerikGridColumns>
             @if (this.ShowColumns)
             {
@@ -98,10 +119,10 @@
 
                         @if (context is Course c)
                         {
-                            if (this.CurrentUserMode == UserMode.Editor)
+                            if (this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Running)
                             {
-                                <div onclick="@(() => { this.CurrentEditCourse = (this.CurrentEditCourse == c ? null : c); })" class="c-clickableCell">
-                                    @if (c == this.CurrentEditCourse)
+                                <div onclick="@(() => { this.Gamestate.CurrentCourseNumber = (this.Gamestate.CurrentCourseNumber == c.Number ? null : (int?)c.Number); this.Gamestate.RaiseStateChanged(this, Context_CurrentCourse);})" class="c-clickableCell">
+                                    @if (c.Number == this.Gamestate.CurrentCourseNumber)
                                     {
                                         <span class="oi oi-aperture c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" style="color: darkred;"></span>
                                     }
@@ -146,7 +167,7 @@
                     <Template>
                         @if (context is Course c)
                         {
-                            if (this.CurrentUserMode == UserMode.Editor)
+                            if (this.CurrentUserMode == UserMode.Editor && (this.Gamestate.Status == Gamestatus.Configuring || this.Gamestate.Status == Gamestatus.Running))
                             {
                                 <div class="c-alignCenter c-clickableCell c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" onclick="@(() => this.IncreasePar(context as Course))">@((context as Course).Par)</div>
                             }
@@ -169,7 +190,7 @@
                         <Template>
                             @if (context is Course c)
                             {
-                                if (this.CurrentUserMode == UserMode.Editor)
+                                if (this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Running)
                                 {
                                     <div class="c-alignCenter c-clickableCell c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" onclick="@(() => this.IncreaseHitCount(context as Course, player))">
                                         <div class="c-ratingColorize" data-hitDiffToPar="@(c.PlayerHits[player.Id] - c.Par)">
@@ -192,6 +213,17 @@
             }
         </TelerikGridColumns>
     </TelerikGrid>
+    @if (this.CurrentUserMode == UserMode.Editor)
+    {
+        <div class="c-disableOverlay" style="visibility: @(this.ShowOuterViewEditOverlay ? "visible" : "collapse");">
+            <div class="c-disableOverlayOuterContainer">
+                <div class="c-disableOverlayContainer" style="opacity: @(this.OuterViewEditOverlayAnimationTrigger ? "1" : "0");">
+                    <div style="font-size: 60px;" class="c-animate-flicker">🔒</div>
+                    <div style="font-size: 1.5em; text-align: center;">edits from outer view happening, please wait...</div>
+                </div>
+            </div>
+        </div>
+    }
 </div>
 
 <TelerikWindow Width="420" Height="260" Centered="true" Visible="@IsNotificationWindowVisible" Modal="true" >
@@ -220,148 +252,4 @@
     </TelerikWindowContent>
 </TelerikWindow>
 
-<style>
-    div.c-settingsBox {
-        padding-bottom: 20px;
-    }
-
-    .c-rowElement {
-        white-space: nowrap;
-        padding-right: 20px;
-    }
-
-    .c-numberInputField {
-        width: 70px;
-    }
-
-    .c-alignCenter {
-        text-align: center;
-    }
-
-    .c-gridEditButton {
-        width: 85px;
-    }
-
-    .c-incellControl {
-        height: 22px;
-        padding: 0;
-    }
-
-    th.k-header {
-        font-weight: bold;
-        text-align: center;
-    }
-
-    .k-grid th, .k-grid td {
-        padding: 5px;
-    }
-
-    .c-increaseButton {
-        width: 30px;
-    }
-
-    div.c-flexHorizontalContainer {
-        display: flex;
-        flex-direction: row;
-        width: 100%;
-        justify-content: space-between;
-    }
-
-    div.c-flexContainerWithCenteredItem {
-        display: flex;
-        align-items: center; /*vertical*/
-        justify-content: center; /*horizonntal*/
-    }
-
-    span.c-toastMessage {
-        color: green;
-        font-weight: bold;
-        opacity: 0.5;
-        font-size: large;
-    }
-
-    div.c-clickableCell {
-        height: 100%;
-        cursor: pointer;
-        -webkit-user-select: none;  /* Chrome all / Safari all */
-        -moz-user-select: none;     /* Firefox all */
-        -ms-user-select: none;      /* IE 10+ */
-        user-select: none;          /* Likely future */      
-    }
-
-    .c-opacityAnimation {
-        transition: opacity 600ms ease-out;
-    }
-    .c-opacityAnimationHidden {
-        opacity: 0;
-    }
-
-    div.c-ratingColorize {
-        transition: background-color 300ms ease-in-out;
-    }
-
-    div.c-ratingColorize[data-hitDiffToPar="-6"] {
-        background-color: rgba(0,150,0,0.8);
-    }
-
-    div.c-ratingColorize[data-hitDiffToPar="-5"] {
-        background-color: rgba(0,150,0,0.7);
-    }
-
-    div.c-ratingColorize[data-hitDiffToPar="-4"] {
-        background-color: rgba(0,150,0,0.6);
-    }
-
-    div.c-ratingColorize[data-hitDiffToPar="-3"] {
-        background-color: rgba(0,150,0,0.5);
-    }
-
-    div.c-ratingColorize[data-hitDiffToPar="-2"] {
-        background-color: rgba(0,150,0,0.4);
-    }
-
-    div.c-ratingColorize[data-hitDiffToPar="-1"] {
-        background-color: rgba(0,150,0,0.3);
-    }
-
-    div.c-ratingColorize[data-hitDiffToPar="0"] {
-        background-color: rgba(0,0,0,0.3);
-    }
-
-    div.c-ratingColorize[data-hitDiffToPar="1"] {
-        background-color: rgba(150,0,0,0.3);
-    }
-
-    div.c-ratingColorize[data-hitDiffToPar="2"] {
-        background-color: rgba(150,0,0,0.4);
-    }
-
-    div.c-ratingColorize[data-hitDiffToPar="3"] {
-        background-color: rgba(150,0,0,0.5);
-    }
-
-    div.c-ratingColorize[data-hitDiffToPar="4"] {
-        background-color: rgba(150,0,0,0.6);
-    }
-
-    div.c-ratingColorize[data-hitDiffToPar="5"] {
-        background-color: rgba(150,0,0,0.7);
-    }
-
-    div.c-ratingColorize[data-hitDiffToPar="6"] {
-        background-color: rgba(150,0,0,0.8);
-    }
-
-    tbody tr.k-master-row td[role=gridcell] {
-        padding: 1px;
-        height: 26px;
-    }
-
-    .c-loweredOpacityAnimation {
-        transition: opacity 400ms ease-out;
-    }
-
-    .c-loweredOpacity {
-        opacity: 0.3;
-    }
-</style>
+<link href="/css/styles/GameScoreboard.min.css" rel="stylesheet" />

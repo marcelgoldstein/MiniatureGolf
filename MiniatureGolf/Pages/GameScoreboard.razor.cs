@@ -11,6 +11,14 @@ namespace MiniatureGolf.Pages
 {
     public class GameScoreboardModel : ComponentBase
     {
+        #region Const
+        protected const string Context_HitCount = nameof(Context_HitCount);
+        protected const string Context_Par = nameof(Context_Par);
+        protected const string Context_GameStarted = nameof(Context_GameStarted);
+        protected const string Context_GameFinished = nameof(Context_GameFinished);
+        protected const string Context_CurrentCourse = nameof(Context_CurrentCourse);
+        #endregion Const
+
         #region Variables
         private readonly List<string> autoRefreshEmojis = new List<string> { "🐒", "🦍", "🐩", "🐕", "🐈", "🐅", "🐆", "🐎", "🦌", "🦏", "🦛", "🐂", "🐃", "🐄", "🐖", "🐏", "🐑", "🐐", "🐪", "🐫", "🦙", "🦘", "🦡", "🐘", "🐁", "🐀", "🦔", "🐇", "🐿", "🦎", "🐊", "🐢", "🐍", "🐉", "🦕", "🦖", "🦈", "🐬", "🐳", "🐋", "🐟", "🐠", "🐡", "🦐", "🦑", "🐙", "🦞", "🦀", "🐚", "🦆", "🐓", "🦃", "🦅", "🕊", "🦢", "🦜", "🦚", "🦉", "🐦", "🐧", "🐥", "🐤", "🐣", "🦇", "🦋", "🐌", "🐛", "🦟", "🦗", "🐜", "🐝", "🐞", "🦂", "🕷" };
         #endregion Variables
@@ -31,7 +39,6 @@ namespace MiniatureGolf.Pages
         public List<Player> RankedPlayers { get; set; } = new List<Player>();
         public bool ShowColumns { get; set; } = true;
         public UserMode CurrentUserMode { get; set; }
-        public Course CurrentEditCourse { get; set; }
 
         protected List<UserModeDropDownItem> ShareModes { get; set; }
         public int SelectedShareMode { get; set; } = (int)UserMode.SpectatorReadOnly;
@@ -54,6 +61,10 @@ namespace MiniatureGolf.Pages
         protected RedundantExecutionSuppressor AutoRefreshHelper { private set; get; }
 
         public string AutoRefreshEmoji { get; set; } = "😜";
+
+        public bool ShowOuterViewEditOverlay { get; set; }
+        public bool OuterViewEditOverlayAnimationTrigger { get; set; }
+        protected RedundantExecutionSuppressor OuterViewEditOverlayHelper { private set; get; }
         #endregion Properties
 
         #region ctor
@@ -64,6 +75,8 @@ namespace MiniatureGolf.Pages
             {
                 this.Invoke(this.StateHasChanged);
             };
+
+            this.OuterViewEditOverlayHelper = new RedundantExecutionSuppressor(async () => { this.OuterViewEditOverlayAnimationTrigger = false; await this.Invoke(this.StateHasChanged); await Task.Delay(1000); this.ShowOuterViewEditOverlay = false; await this.Invoke(this.StateHasChanged); }, TimeSpan.FromSeconds(3));
         }
         #endregion ctor
 
@@ -103,7 +116,7 @@ namespace MiniatureGolf.Pages
 
                 if (this.GameService.TryGetGame(this.GameId, out var gs))
                 {
-                    this.Gamestate = gs;
+                    this.SetCurrentGameState(gs);
 
                     this.ChangeUserMode(desiredUserMode);
 
@@ -126,23 +139,37 @@ namespace MiniatureGolf.Pages
                 }
             }
 
-
             return base.OnParametersSetAsync();
         }
 
-        private void StartAutoRefreshLoop(Func<bool> keepRunningWhileTrueExpression)
+        private void SetCurrentGameState(Gamestate gs)
         {
-            Task.Run(async () =>
+            if (this.Gamestate != null)
+                this.Gamestate.StateChanged -= this.Gamestate_StateChanged;
+
+            this.Gamestate = gs;
+
+            if (this.Gamestate != null)
+                this.Gamestate.StateChanged += this.Gamestate_StateChanged;
+        }
+
+        private void Gamestate_StateChanged(object sender, object caller, string context)
+        {
+            if (caller == this)
+                return; // nur events, welche von anderen  Page-Instanzen ausgelöst wurden sind relevant
+
+            if ((sender as Gamestate)?.Id != this.Gamestate?.Id)
+                return; // nicht das eigene 'game'
+
+            if (context == Context_HitCount)
             {
-                while (keepRunningWhileTrueExpression())
-                {
-                    this.RefreshPlayerRanking();
+                this.ShowOuterViewEditOverlay = true;
+                this.OuterViewEditOverlayAnimationTrigger = true;
+                this.RefreshPlayerRanking();
+                this.OuterViewEditOverlayHelper.Push();
+            }
 
-                    await this.Invoke(this.StateHasChanged);
-
-                    await Task.Delay(1000);
-                }
-            });
+            this.Invoke(this.StateHasChanged);
         }
 
         private void CreateSampleGame()
@@ -201,6 +228,8 @@ namespace MiniatureGolf.Pages
             this.Gamestate.Courses[2].PlayerHits[p4.Id] = 4;
             this.Gamestate.Courses[3].PlayerHits[p4.Id] = 2;
             this.Gamestate.Courses[4].PlayerHits[p4.Id] = 4;
+
+            this.RefreshPlayerRanking();
         }
 
         protected void AddPlayer()
@@ -263,7 +292,7 @@ namespace MiniatureGolf.Pages
             {
                 players = this.SelectedTeam.Players;
             }
-            
+
             if (this.Gamestate.Status >= Gamestatus.Running)
             {
                 this.RankedPlayers = players
@@ -281,11 +310,22 @@ namespace MiniatureGolf.Pages
         {
             if (this.GameService.TryGetGame(this.GameService.CreateNewGame(), out var gs))
             {
-                this.Gamestate = gs;
+                this.SetCurrentGameState(gs);
 
                 this.RefreshPlayerRanking();
 
                 this.Gamestate.Status = Gamestatus.Configuring;
+            }
+        }
+
+        protected void FinishGame()
+        {
+            if (this.Gamestate != null)
+            {
+                this.Gamestate.Status = Gamestatus.Finished;
+                this.Gamestate.FinishTime = DateTime.UtcNow;
+
+                this.Gamestate.RaiseStateChanged(this, Context_GameFinished);
             }
         }
 
@@ -308,6 +348,10 @@ namespace MiniatureGolf.Pages
             if (this.Gamestate != null)
             {
                 this.Gamestate.Status = Gamestatus.Running;
+                this.Gamestate.StartTime = DateTime.UtcNow;
+
+                this.RefreshPlayerRanking();
+                this.Gamestate.RaiseStateChanged(this, Context_GameStarted);
             }
         }
 
@@ -315,18 +359,6 @@ namespace MiniatureGolf.Pages
         {
             this.CurrentUserMode = newMode;
             this.RefreshPlayerRanking();
-
-            switch (newMode)
-            {
-                case UserMode.Editor:
-                    break;
-                case UserMode.Spectator:
-                case UserMode.SpectatorReadOnly:
-                    this.StartAutoRefreshLoop(() => (this.CurrentUserMode switch { UserMode.Spectator => true, UserMode.SpectatorReadOnly => true, _ => false }));
-                    break;
-                default:
-                    throw new NotImplementedException();
-            }
 
             this.StateHasChanged();
         }
@@ -389,7 +421,8 @@ namespace MiniatureGolf.Pages
             this.RandoPickAutoRefreshEmoji();
             this.AutoRefreshHelper.Push();
 
-            this.CurrentEditCourse = c;
+            this.Gamestate.CurrentCourseNumber = c.Number;
+            this.Gamestate.RaiseStateChanged(this, Context_HitCount);
         }
 
         protected void IncreasePar(Course c)
@@ -403,18 +436,18 @@ namespace MiniatureGolf.Pages
                 c.Par = 1;
             }
 
-            this.CurrentEditCourse = c;
+            this.Gamestate.RaiseStateChanged(this, Context_Par);
         }
 
         protected bool RowShouldBeDisplayedTransparently(Course c)
         {
-            if (this.CurrentUserMode != UserMode.Editor)
+            if (this.Gamestate.Status != Gamestatus.Running)
                 return false;
 
-            if (this.CurrentEditCourse == null)
+            if (this.Gamestate.CurrentCourseNumber == null)
                 return false;
 
-            if (this.CurrentEditCourse == c)
+            if (this.Gamestate.CurrentCourseNumber == c.Number)
                 return false;
 
             return true;

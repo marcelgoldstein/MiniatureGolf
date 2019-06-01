@@ -1,0 +1,13 @@
+﻿.c-flexContainer {
+  display: flex;
+  justify-content: space-between; }
+
+.c-flexItem {
+  flex-grow: 1;
+  margin: 5px; }
+
+.c-flexItemFirst {
+  margin-left: 0px; }
+
+.c-flexItemLast {
+  margin-right: 0px; }

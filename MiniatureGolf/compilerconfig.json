@@ -1,0 +1,10 @@
+﻿[
+  {
+    "outputFile": "wwwroot/css/styles/GameScoreboard.css",
+    "inputFile": "wwwroot/css/styles/GameScoreboard.scss"
+  },
+  {
+    "outputFile": "wwwroot/css/styles/GamesList.css",
+    "inputFile": "wwwroot/css/styles/GamesList.scss"
+  }
+]
