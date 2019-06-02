@@ -27,28 +27,26 @@ namespace MiniatureGolf.Models
         public DateTime? StartTime { get; set; }
         public DateTime? FinishTime { get; set; }
 
-        public List<Team> Teams { get; set; } = new List<Team>();
+        public List<Team> Teams { get; set; } = new List<Team>() { new Team { Number = 0, Name = "all" } };
         public List<Course> Courses { get; set; } = new List<Course>();
-
-        public int? CurrentCourseNumber { get; set; }
 
         public Gamestatus Status { get; set; } = Gamestatus.Created;
         public string StatusText => Enum.GetName(typeof(Gamestatus), this.Status).ToLower();
-        public string PlayersText => $"{this.Teams.SelectMany(a => a.Players).Count():#00}:    {string.Join(", ", this.GetPreparedPlayersForGame(this))}";
+        public string PlayersText => $"{this.Teams.Single(a => a.Number == 0).Players.Count:#00}:    {string.Join(", ", this.GetPreparedPlayersForGame(this))}";
         public string Time => this.GetTimeText();
         #endregion Properties
 
         #region Events
         public event StateChangedHandler StateChanged;
-        public delegate void StateChangedHandler(object sender, object caller, string context);
+        public delegate void StateChangedHandler(object sender, object caller, StateChangedContext context);
 
-        public void RaiseStateChanged(object caller, string context) => this.StateChanged?.Invoke(this, caller, context);
+        public void RaiseStateChanged(object caller, StateChangedContext context) => this.StateChanged?.Invoke(this, caller, context);
         #endregion Events
 
         #region Methods
         private List<string> GetPreparedPlayersForGame(Gamestate gs)
         {
-            var players = gs.Teams.SelectMany(a => a.Players)
+            var players = gs.Teams.Single(a => a.Number == 0).Players
                     .OrderByDescending(a => gs.Courses.Count(b => b.PlayerHits[a.Id] != null)) // absteigend nach anzahl gespielter kurse
                     .ThenBy(a => gs.Courses.Sum(b => b.PlayerHits[a.Id])) // aufsteigend nach summe der benötigten schläge
                     .ToList();
@@ -73,5 +71,11 @@ namespace MiniatureGolf.Models
             }
         }
         #endregion Methods
+    }
+
+    public class StateChangedContext
+    {
+        public string Key { get; set; }
+        public object Payload { get; set; }
     }
 }

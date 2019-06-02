@@ -112,7 +112,7 @@ tbody tr.k-master-row td[role=gridcell] {
   height: 26px; }
 
 .c-loweredOpacityAnimation {
-  transition: opacity 400ms ease-out; }
+  transition: opacity 200ms ease-out; }
 
 .c-loweredOpacity {
   opacity: 0.3; }

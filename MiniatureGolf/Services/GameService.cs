@@ -33,6 +33,7 @@ namespace MiniatureGolf.Services
         {
             var gs = new Gamestate();
             this.Games.Add(gs.Id, gs);
+
             return gs.Id;
         }
 
@@ -71,7 +72,7 @@ namespace MiniatureGolf.Services
             if (this.TryGetGame(gameId, out var gs))
             {
                 var t = new Course() { Number = gs.Courses.Count + 1, Par = par };
-                foreach (var player in gs.Teams.SelectMany(a => a.Players))
+                foreach (var player in gs.Teams.Single(a => a.Number == 0).Players)
                 {
                     t.PlayerHits[player.Id] = null;
                 }
@@ -115,7 +116,7 @@ namespace MiniatureGolf.Services
             {
                 if (string.IsNullOrWhiteSpace(name))
                 {
-                    name = $"Player {gs.Teams.SelectMany(a => a.Players).Count() + 1:00}";
+                    name = $"Player {gs.Teams.Single(a => a.Number == 0).Players.Count + 1:00}";
                 }
 
                 var p = new Player() { Name = name };
@@ -124,12 +125,14 @@ namespace MiniatureGolf.Services
                     track.PlayerHits[p.Id] = null;
                 }
 
-                if (gs.Teams.Count == 0)
-                { // falls noch kein team vorhanden ist, eins erstellen
-                    this.TryAddTeam(gameId);
-                }
+                // add player to default-team 'all' (which has number '0')
+                gs.Teams.Single(a => a.Number == 0).Players.Add(p);
 
-                gs.Teams.Last().Players.Add(p);
+                // falls ein anderes team als das default-team vorhanden ist, in das neueste team aufnehmen
+                if (gs.Teams.LastOrDefault(a => a.Number != 0) is Team t)
+                {
+                    t.Players.Add(p);
+                }
 
                 return true;
             }
@@ -143,28 +146,26 @@ namespace MiniatureGolf.Services
         {
             if (this.TryGetGame(gameId, out var gs))
             {
-                if (gs.Teams.SelectMany(a => a.Players).Count() > 0)
+                if (gs.Teams.Single(a => a.Number == 0).Players.LastOrDefault() is Player p)
                 {
-                    var t = gs.Teams.LastOrDefault();
-
-                    if (t?.Players.Count == 0)
-                    {
-                        gs.Teams.Remove(t);
-                    }
-
-                    t = gs.Teams.LastOrDefault();
-
-                    var p = t.Players.Last();
-                    t.Players.Remove(p);
-                    if (t.Players.Count == 0)
-                    { // letzter spieler aus team entfernt, dann auch das team entfernen
-                        gs.Teams.Remove(t);
-                    }
-
+                    // player stats aus allen courses entfernen
                     foreach (var course in gs.Courses)
                     {
                         course.PlayerHits.Remove(p.Id);
                     }
+
+                    // spieler aus dem default-team entfernen
+                    gs.Teams.Single(a => a.Number == 0).Players.Remove(p);
+
+                    // team ermitteln, indem der player sein muss
+                    if (gs.Teams.LastOrDefault(a => a.Number != 0 && a.Players.Contains(p)) is Team t)
+                    {
+                        // spieler aus diesem team entfernen
+                        t.Players.Remove(p);
+                    }
+
+                    // alle nicht-default-team teams, welche keiner spieler haben entfernen
+                    gs.Teams.RemoveAll(a => a.Number != 0 && a.Players.Count == 0);
                 }
 
                 return true;
@@ -181,14 +182,14 @@ namespace MiniatureGolf.Services
         {
             if (this.TryGetGame(gameId, out var gs))
             {
-                var t = gs.Teams.LastOrDefault();
-                if (t != null && t.Players.Count == 0)
-                { // bereits ein team vorhanden und dieses hat aber keine player -> kein neues team erstellen
-                    return false;
+                if (gs.Teams.LastOrDefault(a => a.Number != 0) == null)
+                { // erstes nicht-default-team, also alle bisherigen spieler aufnehmen
+                    var t1 = new Team { Number = gs.Teams.Count };
+                    t1.Players.AddRange(gs.Teams.Single(a => a.Number == 0).Players);
+                    gs.Teams.Add(t1);
                 }
 
-                t = new Team { Number = gs.Teams.Count + 1 };
-
+                var t = new Team { Number = gs.Teams.Count };
                 gs.Teams.Add(t);
 
                 return true;

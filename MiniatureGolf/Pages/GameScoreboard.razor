@@ -32,12 +32,12 @@
             {
                 if (this.Gamestate.Status == Gamestatus.Created || this.Gamestate.Status == Gamestatus.Configuring || this.Gamestate.Status == Gamestatus.Finished)
                 {
-                    <button type="button" class="btn btn-primary" disabled="@(!(this.Gamestate.Teams.SelectMany(a => a.Players).Count() > 0 || this.Gamestate.Courses.Count > 0))" onclick="@(this.CreateNewGame)">new game</button>
+                    <button type="button" class="btn btn-primary" disabled="@(!(this.Gamestate.Teams.Single(a => a.Number == 0).Players.Count > 0 || this.Gamestate.Courses.Count > 0))" onclick="@(this.CreateNewGame)">new game</button>
                 }
 
                 if (this.Gamestate.Status == Gamestatus.Configuring)
                 {
-                    <button type="button" class="btn btn-success" disabled="@(!(this.Gamestate.Teams.SelectMany(a => a.Players).Count() > 0 && this.Gamestate.Courses.Count > 0))" onclick="@(this.StartGame)">start game</button>
+                    <button type="button" class="btn btn-success" disabled="@(!(this.Gamestate.Teams.Single(a => a.Number == 0).Players.Count > 0 && this.Gamestate.Courses.Count > 0))" onclick="@(this.StartGame)">start game</button>
                 }
 
                 if (this.Gamestate.Status == Gamestatus.Running)
@@ -46,10 +46,10 @@
                 }
             }
 
-            @if (this.Gamestate.Teams.Count(a => a.Players.Any()) > 1)
+            @if (this.Gamestate.Teams.Count(a => a.Players.Any()) > 2)
             {
                 <TelerikDropDownList Data="@this.Gamestate.Teams.Where(a => a.Players.Count > 0)" bind-value="@this.SelectedTeamNumber" ValueField="@nameof(Team.Number)" TextField="@nameof(Team.Name)"
-                                     Height="38" Width="140" PopupHeight="200" TItem="@Team" TValue="@int" DefaultItem="@this.NullTeamSelection" />
+                                     Height="38" Width="140" PopupHeight="200" TItem="@Team" TValue="@int" />
             }
         </span>
 
@@ -65,32 +65,30 @@
     @if (this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Configuring)
     {
         <div>
-            <div>
-                <span class="c-rowElement">
-                    <TelerikButton Class="c-increaseButton" OnClick="@this.RemovePlayer" Enabled="@(this.Gamestate.Teams.SelectMany(a => a.Players).Count() > 0)">-</TelerikButton>
-                    <TelerikTextBox Label="Player" bind-value="@PlayerNameToAdd" />
-                    <TelerikButton Class="c-increaseButton" OnClick="@this.AddPlayer">+</TelerikButton>
-                    <TelerikButton Icon="myspace" OnClick="@this.CreateNewTeam">new team</TelerikButton>
-                </span>
+            <span class="c-rowElement">
+                <TelerikButton Class="c-increaseButton" OnClick="@this.RemovePlayer" Enabled="@(this.Gamestate.Teams.Single(a => a.Number == 0).Players.Count > 0)">-</TelerikButton>
+                <TelerikTextBox Label="Player" bind-value="@PlayerNameToAdd" />
+                <TelerikButton Class="c-increaseButton" OnClick="@this.AddPlayer">+</TelerikButton>
+                <TelerikButton Icon="myspace" OnClick="@this.CreateNewTeam">new team</TelerikButton>
+            </span>
 
-                <span class="c-rowElement">
-                    <TelerikButton Class="c-increaseButton" OnClick="@this.RemoveCourse" Enabled="@(this.Gamestate.Courses.Count > 0)">-</TelerikButton>
-                    <span class="k-widget k-numerictextbox c-numberInputField">
-                        <span class="k-numeric-wrap">
-                            <input class="k-input k-formatted-value" bind="@this.CourseParNumberToAdd" title="Par" disabled />
-                            <span class="k-select">
-                                <span class="k-link k-link-increase" aria-label="Increase value" title="Increase value" onclick="@(() => { if (this.CourseParNumberToAdd < 7) this.CourseParNumberToAdd++; })">
-                                    <span class="k-icon k-i-arrow-n"></span>
-                                </span>
-                                <span class="k-link k-link-decrease" aria-label="Decrease value" title="Decrease value" onclick="@(() => { if (this.CourseParNumberToAdd > 1) this.CourseParNumberToAdd--; })">
-                                    <span class="k-icon k-i-arrow-s"></span>
-                                </span>
+            <span class="c-rowElement">
+                <TelerikButton Class="c-increaseButton" OnClick="@this.RemoveCourse" Enabled="@(this.Gamestate.Courses.Count > 0)">-</TelerikButton>
+                <span class="k-widget k-numerictextbox c-numberInputField">
+                    <span class="k-numeric-wrap">
+                        <input class="k-input k-formatted-value" bind="@this.CourseParNumberToAdd" title="Par" disabled />
+                        <span class="k-select">
+                            <span class="k-link k-link-increase" aria-label="Increase value" title="Increase value" onclick="@(() => { if (this.CourseParNumberToAdd < 7) this.CourseParNumberToAdd++; })">
+                                <span class="k-icon k-i-arrow-n"></span>
+                            </span>
+                            <span class="k-link k-link-decrease" aria-label="Decrease value" title="Decrease value" onclick="@(() => { if (this.CourseParNumberToAdd > 1) this.CourseParNumberToAdd--; })">
+                                <span class="k-icon k-i-arrow-s"></span>
                             </span>
                         </span>
                     </span>
-                    <TelerikButton Class="c-increaseButton" OnClick="@this.AddCourse">+</TelerikButton>
                 </span>
-            </div>
+                <TelerikButton Class="c-increaseButton" OnClick="@this.AddCourse">+</TelerikButton>
+            </span>
         </div>
     }
 
@@ -121,8 +119,8 @@
                         {
                             if (this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Running)
                             {
-                                <div onclick="@(() => { this.Gamestate.CurrentCourseNumber = (this.Gamestate.CurrentCourseNumber == c.Number ? null : (int?)c.Number); this.Gamestate.RaiseStateChanged(this, Context_CurrentCourse);})" class="c-clickableCell">
-                                    @if (c.Number == this.Gamestate.CurrentCourseNumber)
+                                <div onclick="@(() => { this.SelectedTeam.CurrentCourseNumber = (this.SelectedTeam.CurrentCourseNumber == c.Number ? null : (int?)c.Number); this.Gamestate.RaiseStateChanged(this, new StateChangedContext { Key = Context_CurrentCourse });})" class="c-clickableCell">
+                                    @if (c.Number == this.SelectedTeam.CurrentCourseNumber)
                                     {
                                         <span class="oi oi-aperture c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" style="color: darkred;"></span>
                                     }
@@ -179,7 +177,7 @@
                     </Template>
                 </TelerikGridColumn>
 
-                @if (this.Gamestate.Teams.SelectMany(a => a.Players).Count() == 0)
+                @if (this.Gamestate.Teams.Single(a => a.Number == 0).Players.Count == 0)
                 {
                     <TelerikGridColumn Title="" Field="" />
                 }
