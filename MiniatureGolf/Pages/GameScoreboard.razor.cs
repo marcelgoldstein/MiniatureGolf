@@ -17,6 +17,8 @@ namespace MiniatureGolf.Pages
         protected const string Context_GameStarted = nameof(Context_GameStarted);
         protected const string Context_GameFinished = nameof(Context_GameFinished);
         protected const string Context_CurrentCourse = nameof(Context_CurrentCourse);
+        protected const string Context_Courses = nameof(Context_Courses);
+        protected const string Context_Teams_Players = nameof(Context_Teams_Players);
         #endregion Const
 
         #region Variables
@@ -49,9 +51,7 @@ namespace MiniatureGolf.Pages
             get { return selectedTeamNumber; }
             set { selectedTeamNumber = value; this.OnSelectedTeamNumberChanged(); }
         }
-
         public Team SelectedTeam { get; set; }
-        public Team NullTeamSelection { get; set; } = new Team { Number = 0 };
 
         public bool IsNotificationWindowVisible { get; set; }
 
@@ -70,13 +70,13 @@ namespace MiniatureGolf.Pages
         #region ctor
         public GameScoreboardModel()
         {
-            this.AutoRefreshHelper = new RedundantExecutionSuppressor(() => { this.RefreshPlayerRanking(); this.Invoke(this.StateHasChanged); }, TimeSpan.FromSeconds(3));
+            this.AutoRefreshHelper = new RedundantExecutionSuppressor(async (t) => { this.RefreshPlayerRanking(); await this.Invoke(this.StateHasChanged); }, TimeSpan.FromSeconds(3));
             this.AutoRefreshHelper.ProgressChanged += (sender, e) =>
             {
                 this.Invoke(this.StateHasChanged);
             };
 
-            this.OuterViewEditOverlayHelper = new RedundantExecutionSuppressor(async () => { this.OuterViewEditOverlayAnimationTrigger = false; await this.Invoke(this.StateHasChanged); await Task.Delay(1000); this.ShowOuterViewEditOverlay = false; await this.Invoke(this.StateHasChanged); }, TimeSpan.FromSeconds(3));
+            this.OuterViewEditOverlayHelper = new RedundantExecutionSuppressor(async (t) => { this.OuterViewEditOverlayAnimationTrigger = false; await this.Invoke(this.StateHasChanged); await Task.Delay(1000); t.ThrowIfCancellationRequested(); this.ShowOuterViewEditOverlay = false; await this.Invoke(this.StateHasChanged); }, TimeSpan.FromSeconds(3));
         }
         #endregion ctor
 
@@ -101,7 +101,6 @@ namespace MiniatureGolf.Pages
                 desiredUserMode = UserMode.Editor;
                 this.CreateSampleGame();
                 this.ChangeUserMode(desiredUserMode);
-                this.NavigateToGame(this.Gamestate.Id, this.CurrentUserMode, this.SelectedTeamNumber);
             }
             else
             {
@@ -148,12 +147,13 @@ namespace MiniatureGolf.Pages
                 this.Gamestate.StateChanged -= this.Gamestate_StateChanged;
 
             this.Gamestate = gs;
+            this.SelectedTeamNumber = 0;
 
             if (this.Gamestate != null)
                 this.Gamestate.StateChanged += this.Gamestate_StateChanged;
         }
 
-        private void Gamestate_StateChanged(object sender, object caller, string context)
+        private void Gamestate_StateChanged(object sender, object caller, StateChangedContext context)
         {
             if (caller == this)
                 return; // nur events, welche von anderen  Page-Instanzen ausgelöst wurden sind relevant
@@ -161,12 +161,25 @@ namespace MiniatureGolf.Pages
             if ((sender as Gamestate)?.Id != this.Gamestate?.Id)
                 return; // nicht das eigene 'game'
 
-            if (context == Context_HitCount)
+            if (context.Key == Context_HitCount)
             {
-                this.ShowOuterViewEditOverlay = true;
-                this.OuterViewEditOverlayAnimationTrigger = true;
+                if (this.SelectedTeam.Players.Contains(context.Payload as Player))
+                { // nur wenn der betroffenen Spieler im aktuell angezeigten Team ist
+                    this.ShowOuterViewEditOverlay = true;
+                    this.OuterViewEditOverlayAnimationTrigger = true;
+                    this.RefreshPlayerRanking();
+                    this.OuterViewEditOverlayHelper.Push(); 
+                }
+            }
+
+            if (context.Key == Context_Teams_Players)
+            {
+                if (this.Gamestate.Teams.Contains(this.SelectedTeam) == false)
+                {
+                    this.SelectedTeamNumber = 0; // default-team (0) auswählen
+                }
+
                 this.RefreshPlayerRanking();
-                this.OuterViewEditOverlayHelper.Push();
             }
 
             this.Invoke(this.StateHasChanged);
@@ -198,7 +211,7 @@ namespace MiniatureGolf.Pages
             this.AddPlayer();
 
             // Peter
-            var p1 = this.Gamestate.Teams.SelectMany(a => a.Players).ToArray()[0];
+            var p1 = this.Gamestate.Teams.Single(a => a.Number == 0).Players[0];
             this.Gamestate.Courses[0].PlayerHits[p1.Id] = 5;
             this.Gamestate.Courses[1].PlayerHits[p1.Id] = 4;
             this.Gamestate.Courses[2].PlayerHits[p1.Id] = 5;
@@ -206,7 +219,7 @@ namespace MiniatureGolf.Pages
             this.Gamestate.Courses[4].PlayerHits[p1.Id] = 5;
 
             // Hugo
-            var p2 = this.Gamestate.Teams.SelectMany(a => a.Players).ToArray()[1];
+            var p2 = this.Gamestate.Teams.Single(a => a.Number == 0).Players[1];
             this.Gamestate.Courses[0].PlayerHits[p2.Id] = 3;
             this.Gamestate.Courses[1].PlayerHits[p2.Id] = 2;
             this.Gamestate.Courses[2].PlayerHits[p2.Id] = 3;
@@ -214,7 +227,7 @@ namespace MiniatureGolf.Pages
             this.Gamestate.Courses[4].PlayerHits[p2.Id] = 4;
 
             // Melissa
-            var p3 = this.Gamestate.Teams.SelectMany(a => a.Players).ToArray()[2];
+            var p3 = this.Gamestate.Teams.Single(a => a.Number == 0).Players[2];
             this.Gamestate.Courses[0].PlayerHits[p3.Id] = 2;
             this.Gamestate.Courses[1].PlayerHits[p3.Id] = 4;
             this.Gamestate.Courses[2].PlayerHits[p3.Id] = 4;
@@ -222,7 +235,7 @@ namespace MiniatureGolf.Pages
             this.Gamestate.Courses[4].PlayerHits[p3.Id] = 1;
 
             // Saul
-            var p4 = this.Gamestate.Teams.SelectMany(a => a.Players).ToArray()[3];
+            var p4 = this.Gamestate.Teams.Single(a => a.Number == 0).Players[3];
             this.Gamestate.Courses[0].PlayerHits[p4.Id] = 4;
             this.Gamestate.Courses[1].PlayerHits[p4.Id] = 3;
             this.Gamestate.Courses[2].PlayerHits[p4.Id] = 4;
@@ -239,6 +252,8 @@ namespace MiniatureGolf.Pages
                 this.PlayerNameToAdd = null;
 
                 this.RefreshPlayerRanking();
+
+                this.Gamestate.RaiseStateChanged(this, new StateChangedContext { Key = Context_Teams_Players });
             }
         }
 
@@ -246,13 +261,23 @@ namespace MiniatureGolf.Pages
         {
             if (this.GameService.TryRemovePlayer(this.Gamestate.Id))
             {
+                if (this.Gamestate.Teams.Contains(this.SelectedTeam) == false)
+                {
+                    this.SelectedTeamNumber = 0; // default-team (0) auswählen
+                }
+
                 this.RefreshPlayerRanking();
+
+                this.Gamestate.RaiseStateChanged(this, new StateChangedContext { Key = Context_Teams_Players });
             }
         }
 
         protected void CreateNewTeam()
         {
-            this.GameService.TryAddTeam(this.Gamestate.Id);
+            if (this.GameService.TryAddTeam(this.Gamestate.Id))
+            {
+                this.Gamestate.RaiseStateChanged(this, new StateChangedContext { Key = Context_Teams_Players });
+            }
         }
 
         /// <summary>
@@ -273,36 +298,37 @@ namespace MiniatureGolf.Pages
 
         protected void AddCourse()
         {
-            this.GameService.TryAddCourse(this.Gamestate.Id, this.CourseParNumberToAdd);
+            if (this.GameService.TryAddCourse(this.Gamestate.Id, this.CourseParNumberToAdd))
+            {
+                this.Gamestate.RaiseStateChanged(this, new StateChangedContext { Key = Context_Courses });
+            }
         }
 
         protected void RemoveCourse()
         {
-            this.GameService.TryRemoveCourse(this.Gamestate.Id);
+            if (this.GameService.TryRemoveCourse(this.Gamestate.Id))
+            {
+                this.Gamestate.RaiseStateChanged(this, new StateChangedContext { Key = Context_Courses });
+            }
         }
 
         private void RefreshPlayerRanking()
         {
-            List<Player> players = null;
             if (this.SelectedTeam == null)
             {
-                players = this.Gamestate.Teams.SelectMany(a => a.Players).ToList();
-            }
-            else
-            {
-                players = this.SelectedTeam.Players;
+                this.SelectedTeamNumber = 0;
             }
 
             if (this.Gamestate.Status >= Gamestatus.Running)
             {
-                this.RankedPlayers = players
+                this.RankedPlayers = this.SelectedTeam.Players
                     .OrderByDescending(a => this.Gamestate.Courses.Count(b => b.PlayerHits[a.Id] != null)) // absteigend nach anzahl gespielter kurse
                     .ThenBy(a => this.Gamestate.Courses.Sum(b => b.PlayerHits[a.Id])) // aufsteigend nach summe der benötigten schläge
                     .ToList();
             }
             else
             {
-                this.RankedPlayers = players.ToList();
+                this.RankedPlayers = this.SelectedTeam.Players.ToList();
             }
         }
 
@@ -325,22 +351,8 @@ namespace MiniatureGolf.Pages
                 this.Gamestate.Status = Gamestatus.Finished;
                 this.Gamestate.FinishTime = DateTime.UtcNow;
 
-                this.Gamestate.RaiseStateChanged(this, Context_GameFinished);
+                this.Gamestate.RaiseStateChanged(this, new StateChangedContext { Key = Context_GameFinished });
             }
-        }
-
-        private void NavigateToGame(string gameid, UserMode mode, int teamNumber)
-        {
-            // böser hack!:
-            // damit die uri im browser mit den parametern befüllt wird, direkt mal nen page-refresh aufrufen
-            // kurioserweise muss dieser ca. 1000 ms verzögert werden, da sonst nichts? passiert.
-            // komplett ohne verzögern geht nicht, da man sich hier gerade im pre-rendering befindet.
-            // sollte diese component nicht als annavigierbare page verwendet werden, darf dieser auf ruf nicht erfolgen!
-            var _ = this.InvokeAsync(async () =>
-            {
-                await Task.Delay(1000);
-                this.UriHelper.NavigateTo($"/MiniatureGolf/{gameid}/{(int)mode}/{teamNumber}", true);
-            });
         }
 
         protected void StartGame()
@@ -351,7 +363,7 @@ namespace MiniatureGolf.Pages
                 this.Gamestate.StartTime = DateTime.UtcNow;
 
                 this.RefreshPlayerRanking();
-                this.Gamestate.RaiseStateChanged(this, Context_GameStarted);
+                this.Gamestate.RaiseStateChanged(this, new StateChangedContext { Key = Context_GameStarted });
             }
         }
 
@@ -384,23 +396,11 @@ namespace MiniatureGolf.Pages
             this.RefreshPlayerRanking();
         }
 
-        protected List<Player> GetPlayersInView()
-        {
-            if (this.SelectedTeam == null)
-            {
-                return this.Gamestate.Teams.SelectMany(a => a.Players).ToList();
-            }
-            else
-            {
-                return this.SelectedTeam.Players.ToList();
-            }
-        }
-
         protected Dictionary<string, int?> GetPlayerHitsInViewForCourse(Course c)
         {
-            var players = this.GetPlayersInView().Select(a => a.Id);
+            var playersIds = this.SelectedTeam.Players.Select(a => a.Id);
 
-            return c.PlayerHits.Where(a => players.Contains(a.Key)).ToDictionary(a => a.Key, a => a.Value);
+            return c.PlayerHits.Where(a => playersIds.Contains(a.Key)).ToDictionary(a => a.Key, a => a.Value);
         }
 
         protected void IncreaseHitCount(Course c, Player p)
@@ -421,8 +421,8 @@ namespace MiniatureGolf.Pages
             this.RandoPickAutoRefreshEmoji();
             this.AutoRefreshHelper.Push();
 
-            this.Gamestate.CurrentCourseNumber = c.Number;
-            this.Gamestate.RaiseStateChanged(this, Context_HitCount);
+            this.SelectedTeam.CurrentCourseNumber = c.Number;
+            this.Gamestate.RaiseStateChanged(this, new StateChangedContext { Key = Context_HitCount, Payload = p });
         }
 
         protected void IncreasePar(Course c)
@@ -436,7 +436,7 @@ namespace MiniatureGolf.Pages
                 c.Par = 1;
             }
 
-            this.Gamestate.RaiseStateChanged(this, Context_Par);
+            this.Gamestate.RaiseStateChanged(this, new StateChangedContext { Key = Context_Par });
         }
 
         protected bool RowShouldBeDisplayedTransparently(Course c)
@@ -444,10 +444,10 @@ namespace MiniatureGolf.Pages
             if (this.Gamestate.Status != Gamestatus.Running)
                 return false;
 
-            if (this.Gamestate.CurrentCourseNumber == null)
+            if (this.SelectedTeam.CurrentCourseNumber == null)
                 return false;
 
-            if (this.Gamestate.CurrentCourseNumber == c.Number)
+            if (this.SelectedTeam.CurrentCourseNumber == c.Number)
                 return false;
 
             return true;

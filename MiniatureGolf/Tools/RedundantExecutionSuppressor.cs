@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
+using Timer = System.Timers.Timer;
 
 namespace MiniatureGolf.Tools
 {
@@ -13,6 +15,7 @@ namespace MiniatureGolf.Tools
         private readonly Stopwatch watch = new Stopwatch();
         private Task refresher = null;
         private bool stopRefresher = false;
+        private CancellationTokenSource cts;
         #endregion Variables
 
         #region Properties
@@ -26,11 +29,11 @@ namespace MiniatureGolf.Tools
         #endregion Events
 
         #region ctor
-        public RedundantExecutionSuppressor(Action toExecuteAction, TimeSpan delay)
+        public RedundantExecutionSuppressor(Func<CancellationToken, Task> toExecuteAction, TimeSpan delay)
         {
             this.delay = delay;
             this.timer = new Timer { AutoReset = false, Interval = delay.TotalMilliseconds };
-            this.timer.Elapsed += (s, e) =>
+            this.timer.Elapsed += async (s, e) =>
             {
                 this.watch.Stop();
                 this.Progress = 1.0D;
@@ -38,7 +41,12 @@ namespace MiniatureGolf.Tools
                 this.refresher = null;
                 this.IsRunning = false;
 
-                toExecuteAction();
+                try
+                {
+                    await toExecuteAction(cts.Token);
+                }
+                catch (OperationCanceledException)
+                { }
             };
         }
         #endregion ctor
@@ -46,6 +54,9 @@ namespace MiniatureGolf.Tools
         #region Methods
         public void Push()
         {
+            this.cts?.Cancel(); // falls bereits ein invoke ausgeführt wird, soll dieses wenn möglich abgebrochen werden
+            this.cts = new CancellationTokenSource();
+
             if (this.timer.Enabled == false)
             {
                 this.Progress = 0D;

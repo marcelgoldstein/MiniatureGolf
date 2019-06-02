@@ -9,6 +9,19 @@ namespace MiniatureGolf.Models
     {
         public int Number { get; set; }
         public List<Player> Players { get; set; } = new List<Player>();
-        public string Name => (this.Number > 0 ? $"team {this.Number:00}" : "all");
+        public int? CurrentCourseNumber { get; set; }
+
+        private string name;
+        public string Name
+        {
+            get
+            {
+                return (string.IsNullOrWhiteSpace(this.name) ? $"team {this.Number:00}" : this.name);
+            }
+            set
+            {
+                this.name = value;
+            }
+        }
     }
 }
