@@ -62,15 +62,15 @@ namespace MiniatureGolf
                 endpoints.MapFallbackToPage("/_Host");
             });
 
-            #region database initialization
+            #region database migration
             using (var scope = app.ApplicationServices.CreateScope())
             {
                 using (var db = scope.ServiceProvider.GetService<MiniatureGolfContext>())
                 {
-                    db.EnsureDBExistanceWithInitialData();
+                    db.Database.Migrate();
                 }
             }
-            #endregion database initialization
+            #endregion database migration
         }
     }
 }

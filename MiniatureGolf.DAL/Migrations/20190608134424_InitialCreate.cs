@@ -157,6 +157,8 @@ namespace MiniatureGolf.DAL.Migrations
                 name: "IX_Teams_GameId",
                 table: "Teams",
                 column: "GameId");
+
+            migrationBuilder.InsertData("States", new string[] { "Id", "Text" }, new object[,] { { 1, "Created" }, { 5, "Configuring" }, { 10, "Running" }, { 15, "Finished" } });
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)

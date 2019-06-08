@@ -1,10 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Storage;
 using MiniatureGolf.DAL.Models;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace MiniatureGolf.DAL
 {
@@ -30,22 +25,6 @@ namespace MiniatureGolf.DAL
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ForNpgsqlUseIdentityByDefaultColumns();
-        }
-
-        public void EnsureDBExistanceWithInitialData()
-        {
-            if ((this.GetService<IDatabaseCreator>() as RelationalDatabaseCreator).Exists() == false)
-            {
-                this.Database.Migrate();
-
-                // inital data inserts here
-                this.States.Add(new State() { Id = 1, Text = "Created" });
-                this.States.Add(new State() { Id = 5, Text = "Configuring" });
-                this.States.Add(new State() { Id = 10, Text = "Running" });
-                this.States.Add(new State() { Id = 15, Text = "Finished" });
-
-                this.SaveChanges();
-            }
         }
         #endregion Methods
     }
