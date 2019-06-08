@@ -6,7 +6,7 @@ namespace MiniatureGolf.Models
 {
     public enum Gamestatus
     {
-        Created = 0,
+        Created = 1,
         Configuring = 5,
         Running = 10,
         Finished = 15,

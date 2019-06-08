@@ -1,13 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.HttpsPolicy;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using MiniatureGolf.DAL;
 using MiniatureGolf.Data;
 using MiniatureGolf.Services;
 
@@ -15,6 +12,13 @@ namespace MiniatureGolf
 {
     public class Startup
     {
+        private readonly IConfiguration configuration;
+
+        public Startup(IConfiguration configuration)
+        {
+            this.configuration = configuration;
+        }
+
         // This method gets called by the runtime. Use this method to add services to the container.
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
@@ -25,6 +29,12 @@ namespace MiniatureGolf
 
             services.AddSingleton<WeatherForecastService>();
             services.AddSingleton<GameService>();
+
+            services.AddDbContext<MiniatureGolfContext>(optionsBuilder =>
+            {
+                var conStr = this.configuration.GetConnectionString("MiniatureGolfDb");
+                optionsBuilder.UseNpgsql(conStr);
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -51,6 +61,16 @@ namespace MiniatureGolf
                 endpoints.MapBlazorHub();
                 endpoints.MapFallbackToPage("/_Host");
             });
+
+            #region database initialization
+            using (var scope = app.ApplicationServices.CreateScope())
+            {
+                using (var db = scope.ServiceProvider.GetService<MiniatureGolfContext>())
+                {
+                    db.EnsureDBExistanceWithInitialData();
+                }
+            }
+            #endregion database initialization
         }
     }
 }

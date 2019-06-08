@@ -4,6 +4,7 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <LangVersion>preview</LangVersion>
     <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+    <UserSecretsId>14c6229f-4040-4730-a6e6-beba80603d2d</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,6 +13,11 @@
 
   <ItemGroup>
     <PackageReference Include="BuildWebCompiler" Version="1.12.394" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="3.0.0-preview5.19227.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.0.0-preview5.19227.9" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
     <PackageReference Include="Telerik.UI.for.Blazor.Trial" Version="1.1.0" />
   </ItemGroup>
@@ -28,6 +34,10 @@
     <None Include="wwwroot\css\styles\GamesList.css" />
     <None Include="wwwroot\css\styles\GamesList.min.css" />
     <None Include="wwwroot\css\styles\GamesList.scss" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MiniatureGolf.DAL\MiniatureGolf.DAL.csproj" />
   </ItemGroup>
 
 </Project>
