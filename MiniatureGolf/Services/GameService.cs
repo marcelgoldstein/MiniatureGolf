@@ -7,8 +7,6 @@ using MiniatureGolf.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using DB = MiniatureGolf.DAL.Models;
 
 namespace MiniatureGolf.Services
 {
@@ -69,7 +67,7 @@ namespace MiniatureGolf.Services
                     }
 
                     return false;
-                } 
+                }
             }
         }
 
@@ -116,7 +114,7 @@ namespace MiniatureGolf.Services
             g.Teams.Add(new Team { IsDefaultTeam = true, Number = 0, Name = "all" });
             gs.Game = g;
             db.Games.Add(g);
-            
+
             this.Games.Add(gs.Game.GUID, gs);
 
             return gs.Game.GUID;
@@ -131,7 +129,7 @@ namespace MiniatureGolf.Services
                     this.Games.Remove(gs.Game.GUID);
                     gs.GameDbContext.Games.Remove(gs.Game);
                     gs.GameDbContext.SaveChanges();
-                } 
+                }
             }
         }
 
@@ -188,7 +186,7 @@ namespace MiniatureGolf.Services
                     games.AddRange(gamesFromDatabase);
                 }
 
-                return games; 
+                return games;
             }
         }
 
@@ -206,7 +204,7 @@ namespace MiniatureGolf.Services
                 foreach (var gs in gamesToSave)
                 {
                     this.SaveToDatabase(gs);
-                } 
+                }
             }
         }
         #endregion Games 
@@ -351,7 +349,7 @@ namespace MiniatureGolf.Services
                     t1.Game = gs.Game;
                     gs.Game.Teams.Add(t1);
 
-                    foreach(var p in gs.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).ToList())
+                    foreach (var p in gs.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).ToList())
                     {
                         var tp = new TeamPlayer();
                         gs.GameDbContext.TeamPlayers.Add(tp);

@@ -111,6 +111,7 @@ namespace MiniatureGolf.Pages
                 desiredUserMode = UserMode.Editor;
                 this.CreateSampleGame();
                 this.ChangeUserMode(desiredUserMode);
+                this.SelectedShareMode = (int)UserMode.Editor;
             }
             else
             {
@@ -121,6 +122,9 @@ namespace MiniatureGolf.Pages
                 else
                 {
                     desiredUserMode = (UserMode)Convert.ToInt32(this.Mode);
+
+                    if (desiredUserMode == UserMode.Editor)
+                        this.SelectedShareMode = (int)UserMode.Editor;
                 }
 
                 if (this.GameService.TryGetGame(this.GameId, out var gs))
@@ -145,6 +149,7 @@ namespace MiniatureGolf.Pages
                     this.IsNotificationWindowVisible = true;
                     this.CreateSampleGame();
                     this.ChangeUserMode(UserMode.Editor);
+                    this.SelectedShareMode = (int)UserMode.Editor;
                 }
             }
 
@@ -178,7 +183,7 @@ namespace MiniatureGolf.Pages
                     this.ShowOuterViewEditOverlay = true;
                     this.OuterViewEditOverlayAnimationTrigger = true;
                     this.RefreshPlayerRanking();
-                    this.OuterViewEditOverlayHelper.Push(); 
+                    this.OuterViewEditOverlayHelper.Push();
                 }
             }
 

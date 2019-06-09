@@ -5,7 +5,7 @@
 
 @inherits MiniatureGolf.Pages.GamesListModel
 
-<h1>list of games</h1>
+<h1>Games</h1>
 
 <div style="position: relative;">
     <div class="c-flexContainer">
@@ -17,7 +17,7 @@
     </div>
 
     <div>
-        <TelerikDropDownList Data="@this.FilterStates" bind-value="@this.SelectedFilterStateId" ValueField="@nameof(FilterState.Id)" TextField="@nameof(FilterState.Name)" Height="38" Width="110px" PopupHeight="90" TItem="@FilterState" TValue="@int" />
+        <TelerikDropDownList Data="@this.FilterStates" bind-value="@this.SelectedFilterStateId" ValueField="@nameof(FilterState.Id)" TextField="@nameof(FilterState.Name)" Height="38px" Width="110px" PopupHeight="90px" TItem="@FilterState" TValue="@int" />
         <TelerikTextBox Label="search for player" bind-value="@this.PlayerFilterInput" />
     </div>
 

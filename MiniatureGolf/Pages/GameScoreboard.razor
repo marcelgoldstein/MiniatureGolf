@@ -10,7 +10,7 @@
 
 @inherits MiniatureGolf.Pages.GameScoreboardModel
 
-<h1>scoreboard</h1>
+<h1>Scoreboard</h1>
 
 <div class="c-settingsBox">
     <div class="c-flexHorizontalContainer">
@@ -69,7 +69,7 @@
                                      Height="38px" Width="160px" PopupHeight="90px"
                                      />
             }
-            <a class="btn btn-light c-flexHorizontalChildRight" href="@($"/MiniatureGolf/{this.Gamestate.Game.GUID}/{(int)this.SelectedShareMode}/{this.SelectedTeamNumber}")" role="button"><span class="oi oi-link-intact">  share</span></a>
+            <a class="btn btn-light c-flexHorizontalChildRight" href="@($"/MiniatureGolf/{this.Gamestate.Game.GUID}/{(this.CurrentUserMode switch { UserMode.Editor => (int)this.SelectedShareMode, UserMode.Spectator => (int)UserMode.Spectator, UserMode.SpectatorReadOnly => (int)UserMode.SpectatorReadOnly, _ => (int)UserMode.SpectatorReadOnly })}/{this.SelectedTeamNumber}")" role="button"><span class="oi oi-link-intact">  share</span></a>
         </span>
     </div>
 
@@ -123,7 +123,7 @@
         <TelerikGridColumns>
             @if (this.ShowColumns)
             {
-                <TelerikGridColumn Title="" Editable="false" Width="22">
+                <TelerikGridColumn Title="" Editable="false" Width="22px">
                     <Template>
 
                         @if (context is Course c)
@@ -163,7 +163,7 @@
                 </TelerikGridColumn>
 
 
-                <TelerikGridColumn Title="No." Field="@nameof(Course.Number)" Editable="false" Width="40">
+                <TelerikGridColumn Title="No." Field="@nameof(Course.Number)" Editable="false" Width="40px">
                     <Template>
                         @if (context is Course c)
                         {
@@ -172,7 +172,7 @@
                     </Template>
                 </TelerikGridColumn>
 
-                <TelerikGridColumn Title="Par" Field="@nameof(Course.Par)" Editable="false" Width="40">
+                <TelerikGridColumn Title="Par" Field="@nameof(Course.Par)" Editable="false" Width="40px">
                     <Template>
                         @if (context is Course c)
                         {
@@ -235,7 +235,7 @@
     }
 </div>
 
-<TelerikWindow Width="420" Height="260" Centered="true" Visible="@IsNotificationWindowVisible" Modal="true" >
+<TelerikWindow Width="420px" Height="260px" Centered="true" Visible="@IsNotificationWindowVisible" Modal="true" >
     <TelerikWindowTitle>
         <strong>404 : game not found</strong>
     </TelerikWindowTitle>
