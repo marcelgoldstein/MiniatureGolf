@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using MiniatureGolf.DAL;
 using MiniatureGolf.DAL.Models;
 using MiniatureGolf.Models;
@@ -25,7 +26,8 @@ namespace MiniatureGolf.Services
     public class GameService
     {
         #region Fields
-        private readonly IServiceProvider services; 
+        private readonly IServiceProvider services;
+        private readonly IHostApplicationLifetime applicationLifetime;
         #endregion Fields
 
         #region Properties
@@ -33,9 +35,15 @@ namespace MiniatureGolf.Services
         #endregion Properties
 
         #region ctor
-        public GameService(IServiceProvider services)
+        public GameService(IServiceProvider services, IHostApplicationLifetime applicationLifetime)
         {
             this.services = services;
+            this.applicationLifetime = applicationLifetime;
+
+            this.applicationLifetime.ApplicationStopping.Register(() =>
+            {
+                this.SaveAllOpenGames();
+            });
         }
         #endregion ctor
 
@@ -43,22 +51,25 @@ namespace MiniatureGolf.Services
         #region Games
         public bool TryGetGame(string gameId, out Gamestate gamestate)
         {
-            if(this.Games.TryGetValue(gameId, out gamestate))
+            lock (this.Games)
             {
-                return true;
-            }
-            else
-            {
-                // lookup in db
-                gamestate = this.LoadGameFromDatabase(gameId);
-
-                if (gamestate != null)
+                if (this.Games.TryGetValue(gameId, out gamestate))
                 {
-                    this.Games.Add(gamestate.Game.GUID, gamestate);
                     return true;
                 }
+                else
+                {
+                    // lookup in db
+                    gamestate = this.LoadGameFromDatabase(gameId);
 
-                return false;
+                    if (gamestate != null)
+                    {
+                        this.Games.Add(gamestate.Game.GUID, gamestate);
+                        return true;
+                    }
+
+                    return false;
+                } 
             }
         }
 
@@ -113,71 +124,90 @@ namespace MiniatureGolf.Services
 
         public void DeleteGame(string gameId)
         {
-            if (this.TryGetGame(gameId, out var gs))
+            lock (this.Games)
             {
-                this.Games.Remove(gs.Game.GUID);
-                gs.GameDbContext.Games.Remove(gs.Game);
-                gs.GameDbContext.SaveChanges();
+                if (this.TryGetGame(gameId, out var gs))
+                {
+                    this.Games.Remove(gs.Game.GUID);
+                    gs.GameDbContext.Games.Remove(gs.Game);
+                    gs.GameDbContext.SaveChanges();
+                } 
             }
         }
 
         public List<Gamestate> GetGames(Gamestatus? status, DateFilter dateFilter)
         {
-            var games = new List<Gamestate>();
-
-            var compareDate = dateFilter switch
+            lock (this.Games)
             {
-                DateFilter.Day => DateTime.Today.Date,
-                DateFilter.Week => DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek + (int)DayOfWeek.Monday),
-                DateFilter.Month => new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1),
-                DateFilter.Quarter => new DateTime(DateTime.Today.Year, (((((DateTime.Today.Month - 1) / 3) + 1) - 1) * 3) + 1, 1),
-                DateFilter.Year => new DateTime(DateTime.Today.Year, 1, 1),
-                _ => throw new NotImplementedException(),
-            };
-            compareDate = compareDate.ToUniversalTime();
+                var games = new List<Gamestate>();
 
-            var gamesFromCache = this.Games
-                .Where(a => (status == null || a.Value.Game.StateId == (int)status)
-                    && a.Value.Game.CreationTime >= compareDate)
-                .Select(a => a.Value)
-                .ToList();
+                var compareDate = dateFilter switch
+                {
+                    DateFilter.Day => DateTime.Today.Date,
+                    DateFilter.Week => DateTime.Today.AddDays(-((7 + (int)DateTime.Today.DayOfWeek - (int)DayOfWeek.Monday) % 7)),
+                    DateFilter.Month => new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1),
+                    DateFilter.Quarter => new DateTime(DateTime.Today.Year, (((((DateTime.Today.Month - 1) / 3) + 1) - 1) * 3) + 1, 1),
+                    DateFilter.Year => new DateTime(DateTime.Today.Year, 1, 1),
+                    _ => throw new NotImplementedException(),
+                };
+                compareDate = compareDate.ToUniversalTime();
 
-            games.AddRange(gamesFromCache);
-
-            // db lookup auf weitere games, welche noch nicht im dictionary geladen sind
-            var gamesToFilterByInternalId = gamesFromCache.Where(a => a.Game.Id != 0).Select(a => a.Game.Id); // bereits in dictionary enthaltene müssen nicht neu geladen werden
-
-            using (var db = this.services.GetService<MiniatureGolfContext>())
-            {
-                var gamesFromDatabase = new List<Gamestate>();
-
-                var gameGuidsToLoad = db.Games
-                    .Where(a => (status == null || a.StateId == (int)status)
-                        && a.CreationTime >= compareDate
-                        && gamesToFilterByInternalId.Contains(a.Id) == false)
-                    .Select(a => a.GUID)
+                var gamesFromCache = this.Games
+                    .Where(a => (status == null || a.Value.Game.StateId == (int)status)
+                        && a.Value.Game.CreationTime >= compareDate)
+                    .Select(a => a.Value)
                     .ToList();
 
-                foreach (var guid in gameGuidsToLoad)
-                {
-                    var gs = this.LoadGameFromDatabase(guid);
+                games.AddRange(gamesFromCache);
 
-                    if (gs != null)
+                // db lookup auf weitere games, welche noch nicht im dictionary geladen sind
+                var gamesToFilterByInternalId = gamesFromCache.Where(a => a.Game.Id != 0).Select(a => a.Game.Id); // bereits in dictionary enthaltene müssen nicht neu geladen werden
+
+                using (var db = this.services.GetService<MiniatureGolfContext>())
+                {
+                    var gamesFromDatabase = new List<Gamestate>();
+
+                    var gameGuidsToLoad = db.Games
+                        .Where(a => (status == null || a.StateId == (int)status)
+                            && a.CreationTime >= compareDate
+                            && gamesToFilterByInternalId.Contains(a.Id) == false)
+                        .Select(a => a.GUID)
+                        .ToList();
+
+                    foreach (var guid in gameGuidsToLoad)
                     {
-                        this.Games.Add(gs.Game.GUID, gs);
-                        gamesFromDatabase.Add(gs);
+                        var gs = this.LoadGameFromDatabase(guid);
+
+                        if (gs != null)
+                        {
+                            this.Games.Add(gs.Game.GUID, gs);
+                            gamesFromDatabase.Add(gs);
+                        }
                     }
+
+                    games.AddRange(gamesFromDatabase);
                 }
 
-                games.AddRange(gamesFromDatabase);
+                return games; 
             }
-
-            return games;
         }
 
         public void SaveToDatabase(Gamestate gs)
         {
             gs.GameDbContext.SaveChanges();
+        }
+
+        private void SaveAllOpenGames()
+        {
+            lock (this.Games)
+            {
+                var gamesToSave = this.Games.Where(a => a.Value.Game.StateId > (int)Gamestatus.Created).Select(a => a.Value).ToList();
+
+                foreach (var gs in gamesToSave)
+                {
+                    this.SaveToDatabase(gs);
+                } 
+            }
         }
         #endregion Games 
 
