@@ -1,7 +1,11 @@
-﻿using MiniatureGolf.Models;
+﻿using Microsoft.Extensions.DependencyInjection;
+using MiniatureGolf.DAL;
+using MiniatureGolf.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using DB = MiniatureGolf.DAL.Models;
 
 namespace MiniatureGolf.Services
 {
@@ -18,9 +22,20 @@ namespace MiniatureGolf.Services
 
     public class GameService
     {
+        #region Fields
+        private readonly IServiceProvider services; 
+        #endregion Fields
+
         #region Properties
         public Dictionary<string, Gamestate> Games { get; private set; } = new Dictionary<string, Gamestate>();
         #endregion Properties
+
+        #region ctor
+        public GameService(IServiceProvider services)
+        {
+            this.services = services;
+        }
+        #endregion ctor
 
         #region Methods
         #region Games
@@ -33,6 +48,8 @@ namespace MiniatureGolf.Services
         {
             var gs = new Gamestate();
             this.Games.Add(gs.Id, gs);
+
+            this.SaveToDatabase(null);
 
             return gs.Id;
         }
@@ -63,6 +80,97 @@ namespace MiniatureGolf.Services
                 .Select(a => a.Value);
 
             return games.ToList();
+        }
+
+        public void SaveToDatabase(Gamestate gs)
+        {
+            using (var db = this.services.GetService<MiniatureGolfContext>())
+            {
+                var g = new DB.Game() { StateId = 1 };
+                db.Games.Add(g);
+
+                var t = new DB.Team();
+                var p1 = new DB.Player();
+                p1.Number = 1;
+                p1.Name = "Miguel";
+                t.Players.Add(p1);
+                var p2 = new DB.Player();
+                p2.Number = 2;
+                p2.Name = "Sarah";
+                t.Players.Add(p2);
+                g.Teams.Add(t);
+                var c1 = new DB.Course();
+                c1.Number = 1;
+                c1.Par = 3;
+                g.Courses.Add(c1);
+                var c2 = new DB.Course();
+                c2.Number = 2;
+                c2.Par = 4;
+                g.Courses.Add(c2);
+
+                var pch11 = new DB.PlayerCourseHit();
+                pch11.HitCount = 1;
+                c1.PlayerCourseHits.Add(pch11);
+                p1.PlayerCourseHits.Add(pch11);
+                var pch12 = new DB.PlayerCourseHit();
+                pch12.HitCount = 2;
+                c1.PlayerCourseHits.Add(pch12);
+                p2.PlayerCourseHits.Add(pch12);
+                var pch21 = new DB.PlayerCourseHit();
+                pch21.HitCount = 3;
+                c2.PlayerCourseHits.Add(pch21);
+                p1.PlayerCourseHits.Add(pch21);
+                var pch22 = new DB.PlayerCourseHit();
+                pch22.HitCount = 4;
+                c2.PlayerCourseHits.Add(pch22);
+                p2.PlayerCourseHits.Add(pch22);
+
+
+                //var g = new DB.Game();
+
+                //if (gs.Teams.Where(a => (a.Number != 0 && a.Players.Any())).Any())
+                //{ // sind teams vorhanden, welche spieler beinhalten und nicht das "all"-team sind -> dann diese persistieren
+                //    foreach (var team in gs.Teams.Where(a => (a.Number != 0 && a.Players.Any())).ToList())
+                //    {
+                //        var t = new DB.Team();
+
+                //        foreach (var player in team.Players)
+                //        {
+                //            var p = new DB.Player();
+
+                //            p.Id = player.Id;
+                //            p.Name = player.Name;
+
+                //            t.Players.Add(p);
+                //        }
+
+                //        t.Id = team.Number
+
+                //    }
+
+                //}
+                //else
+                //{ // nur das "all"-team persistieren
+
+                //}
+
+
+
+
+
+
+
+
+                try
+                {
+                    db.SaveChanges();
+                }
+                catch (Exception ex)
+                {
+
+                    throw;
+                }
+            }
         }
         #endregion Games 
 
@@ -199,6 +307,5 @@ namespace MiniatureGolf.Services
         }
         #endregion Teams
         #endregion Methods
-
     }
 }

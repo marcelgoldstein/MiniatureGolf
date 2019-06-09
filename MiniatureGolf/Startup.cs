@@ -34,7 +34,7 @@ namespace MiniatureGolf
             {
                 var conStr = this.configuration.GetConnectionString("MiniatureGolfDb");
                 optionsBuilder.UseNpgsql(conStr);
-            });
+            }, ServiceLifetime.Transient, ServiceLifetime.Transient);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

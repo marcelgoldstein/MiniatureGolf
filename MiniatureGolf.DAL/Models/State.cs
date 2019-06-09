@@ -8,5 +8,7 @@ namespace MiniatureGolf.DAL.Models
     {
         public int Id { get; set; }
         public string Text { get; set; }
+
+        public List<Game> Games { get; set; } = new List<Game>();
     }
 }

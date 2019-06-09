@@ -25,6 +25,52 @@ namespace MiniatureGolf.DAL
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ForNpgsqlUseIdentityByDefaultColumns();
+
+            modelBuilder.Entity<Game>()
+                .HasMany(a => a.Teams)
+                .WithOne(a => a.Game)
+                .HasForeignKey(a => a.GameId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Game>()
+                .HasMany(a => a.Courses)
+                .WithOne(a => a.Game)
+                .HasForeignKey(a => a.GameId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Game>()
+                .HasOne(a => a.State)
+                .WithMany(a => a.Games)
+                .HasForeignKey(a => a.StateId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Team>()
+                .HasMany(a => a.Players)
+                .WithOne(a => a.Team)
+                .HasForeignKey(a => a.TeamId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PlayerCourseHit>()
+                .HasKey(a => new { a.CourseId, a.PlayerId });
+
+            modelBuilder.Entity<PlayerCourseHit>()
+                .HasOne(a => a.Course)
+                .WithMany(a => a.PlayerCourseHits)
+                .HasForeignKey(a => a.CourseId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PlayerCourseHit>()
+                .HasOne(a => a.Player)
+                .WithMany(a => a.PlayerCourseHits)
+                .HasForeignKey(a => a.PlayerId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+
         }
         #endregion Methods
     }

@@ -10,7 +10,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MiniatureGolf.DAL.Migrations
 {
     [DbContext(typeof(MiniatureGolfContext))]
-    [Migration("20190608134424_InitialCreate")]
+    [Migration("20190609093328_InitialCreate")]
     partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -26,7 +26,9 @@ namespace MiniatureGolf.DAL.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<string>("GameId");
+                    b.Property<int>("GameId");
+
+                    b.Property<int>("Number");
 
                     b.Property<int>("Par");
 
@@ -39,15 +41,18 @@ namespace MiniatureGolf.DAL.Migrations
 
             modelBuilder.Entity("MiniatureGolf.DAL.Models.Game", b =>
                 {
-                    b.Property<string>("Id");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd();
 
                     b.Property<DateTime>("CreationTime");
 
                     b.Property<DateTime>("FinishTime");
 
+                    b.Property<string>("GUID");
+
                     b.Property<DateTime>("StartTime");
 
-                    b.Property<int?>("StateId");
+                    b.Property<int>("StateId");
 
                     b.HasKey("Id");
 
@@ -58,11 +63,14 @@ namespace MiniatureGolf.DAL.Migrations
 
             modelBuilder.Entity("MiniatureGolf.DAL.Models.Player", b =>
                 {
-                    b.Property<string>("Id");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd();
 
                     b.Property<string>("Name");
 
-                    b.Property<int?>("TeamId");
+                    b.Property<int>("Number");
+
+                    b.Property<int>("TeamId");
 
                     b.HasKey("Id");
 
@@ -73,18 +81,13 @@ namespace MiniatureGolf.DAL.Migrations
 
             modelBuilder.Entity("MiniatureGolf.DAL.Models.PlayerCourseHit", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd();
+                    b.Property<int>("CourseId");
 
-                    b.Property<int?>("CourseId");
+                    b.Property<int>("PlayerId");
 
                     b.Property<int?>("HitCount");
 
-                    b.Property<string>("PlayerId");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CourseId");
+                    b.HasKey("CourseId", "PlayerId");
 
                     b.HasIndex("PlayerId");
 
@@ -108,9 +111,13 @@ namespace MiniatureGolf.DAL.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<string>("GameId");
+                    b.Property<int?>("CurrentCourseNumber");
+
+                    b.Property<int>("GameId");
 
                     b.Property<string>("Name");
+
+                    b.Property<int>("Number");
 
                     b.HasKey("Id");
 
@@ -121,41 +128,53 @@ namespace MiniatureGolf.DAL.Migrations
 
             modelBuilder.Entity("MiniatureGolf.DAL.Models.Course", b =>
                 {
-                    b.HasOne("MiniatureGolf.DAL.Models.Game", null)
+                    b.HasOne("MiniatureGolf.DAL.Models.Game", "Game")
                         .WithMany("Courses")
-                        .HasForeignKey("GameId");
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("MiniatureGolf.DAL.Models.Game", b =>
                 {
                     b.HasOne("MiniatureGolf.DAL.Models.State", "State")
-                        .WithMany()
-                        .HasForeignKey("StateId");
+                        .WithMany("Games")
+                        .HasForeignKey("StateId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("MiniatureGolf.DAL.Models.Player", b =>
                 {
-                    b.HasOne("MiniatureGolf.DAL.Models.Team", null)
+                    b.HasOne("MiniatureGolf.DAL.Models.Team", "Team")
                         .WithMany("Players")
-                        .HasForeignKey("TeamId");
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("MiniatureGolf.DAL.Models.PlayerCourseHit", b =>
                 {
                     b.HasOne("MiniatureGolf.DAL.Models.Course", "Course")
-                        .WithMany()
-                        .HasForeignKey("CourseId");
+                        .WithMany("PlayerCourseHits")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("MiniatureGolf.DAL.Models.Player", "Player")
-                        .WithMany()
-                        .HasForeignKey("PlayerId");
+                        .WithMany("PlayerCourseHits")
+                        .HasForeignKey("PlayerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("MiniatureGolf.DAL.Models.Team", b =>
                 {
-                    b.HasOne("MiniatureGolf.DAL.Models.Game", null)
+                    b.HasOne("MiniatureGolf.DAL.Models.Game", "Game")
                         .WithMany("Teams")
-                        .HasForeignKey("GameId");
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }
