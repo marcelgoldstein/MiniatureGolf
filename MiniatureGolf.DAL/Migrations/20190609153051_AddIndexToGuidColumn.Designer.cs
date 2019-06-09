@@ -10,8 +10,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MiniatureGolf.DAL.Migrations
 {
     [DbContext(typeof(MiniatureGolfContext))]
-    [Migration("20190609093328_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20190609153051_AddIndexToGuidColumn")]
+    partial class AddIndexToGuidColumn
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -44,17 +44,20 @@ namespace MiniatureGolf.DAL.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<DateTime>("CreationTime");
+                    b.Property<DateTime?>("CreationTime");
 
-                    b.Property<DateTime>("FinishTime");
+                    b.Property<DateTime?>("FinishTime");
 
                     b.Property<string>("GUID");
 
-                    b.Property<DateTime>("StartTime");
+                    b.Property<DateTime?>("StartTime");
 
                     b.Property<int>("StateId");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("GUID")
+                        .IsUnique();
 
                     b.HasIndex("StateId");
 
@@ -70,11 +73,7 @@ namespace MiniatureGolf.DAL.Migrations
 
                     b.Property<int>("Number");
 
-                    b.Property<int>("TeamId");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("TeamId");
 
                     b.ToTable("Players");
                 });
@@ -115,6 +114,8 @@ namespace MiniatureGolf.DAL.Migrations
 
                     b.Property<int>("GameId");
 
+                    b.Property<bool>("IsDefaultTeam");
+
                     b.Property<string>("Name");
 
                     b.Property<int>("Number");
@@ -124,6 +125,21 @@ namespace MiniatureGolf.DAL.Migrations
                     b.HasIndex("GameId");
 
                     b.ToTable("Teams");
+                });
+
+            modelBuilder.Entity("MiniatureGolf.DAL.Models.TeamPlayer", b =>
+                {
+                    b.Property<int>("TeamId");
+
+                    b.Property<int>("PlayerId");
+
+                    b.Property<string>("Info");
+
+                    b.HasKey("TeamId", "PlayerId");
+
+                    b.HasIndex("PlayerId");
+
+                    b.ToTable("TeamPlayers");
                 });
 
             modelBuilder.Entity("MiniatureGolf.DAL.Models.Course", b =>
@@ -141,15 +157,6 @@ namespace MiniatureGolf.DAL.Migrations
                         .WithMany("Games")
                         .HasForeignKey("StateId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("MiniatureGolf.DAL.Models.Player", b =>
-                {
-                    b.HasOne("MiniatureGolf.DAL.Models.Team", "Team")
-                        .WithMany("Players")
-                        .HasForeignKey("TeamId")
-                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
@@ -173,6 +180,21 @@ namespace MiniatureGolf.DAL.Migrations
                     b.HasOne("MiniatureGolf.DAL.Models.Game", "Game")
                         .WithMany("Teams")
                         .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MiniatureGolf.DAL.Models.TeamPlayer", b =>
+                {
+                    b.HasOne("MiniatureGolf.DAL.Models.Player", "Player")
+                        .WithMany("TeamPlayers")
+                        .HasForeignKey("PlayerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MiniatureGolf.DAL.Models.Team", "Team")
+                        .WithMany("TeamPlayers")
+                        .HasForeignKey("TeamId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

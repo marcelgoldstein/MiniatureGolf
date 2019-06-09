@@ -9,9 +9,9 @@ namespace MiniatureGolf.DAL.Models
         public int Id { get; set; }
 
         public string GUID { get; set; }
-        public DateTime CreationTime { get; set; }
-        public DateTime StartTime { get; set; }
-        public DateTime FinishTime { get; set; }
+        public DateTime? CreationTime { get; set; }
+        public DateTime? StartTime { get; set; }
+        public DateTime? FinishTime { get; set; }
 
         public int StateId { get; set; }
         public State State { get; set; }

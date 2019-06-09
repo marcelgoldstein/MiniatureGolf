@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MiniatureGolf.DAL;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -9,9 +10,10 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MiniatureGolf.DAL.Migrations
 {
     [DbContext(typeof(MiniatureGolfContext))]
-    partial class MiniatureGolfContextModelSnapshot : ModelSnapshot
+    [Migration("20190609125435_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -53,9 +55,6 @@ namespace MiniatureGolf.DAL.Migrations
                     b.Property<int>("StateId");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("GUID")
-                        .IsUnique();
 
                     b.HasIndex("StateId");
 

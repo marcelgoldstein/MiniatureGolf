@@ -43,8 +43,8 @@ namespace MiniatureGolf.Pages
             this.CurrentGames = this.GameService
                 .GetGames(state, this.SelectedDateFilter)
                 .Where(a => string.IsNullOrWhiteSpace(this.PlayerFilterInput) || a.PlayersText.ToLower().Contains(this.PlayerFilterInput.ToLower()))
-                .OrderBy(a => a.CreationTime)
-                .ThenBy(a => a.FinishTime)
+                .OrderBy(a => a.Game.CreationTime)
+                .ThenBy(a => a.Game.FinishTime)
                 .ToList();
         }
 
@@ -61,7 +61,7 @@ namespace MiniatureGolf.Pages
 
         protected string GetButtonClassForState(Gamestate gs)
         {
-            switch (gs.Status)
+            switch ((Gamestatus)gs.Game.StateId)
             {
                 case Gamestatus.Created:
                 case Gamestatus.Configuring:

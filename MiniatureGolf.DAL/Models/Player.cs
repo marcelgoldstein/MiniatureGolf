@@ -10,8 +10,7 @@ namespace MiniatureGolf.DAL.Models
         public int Number { get; set; }
         public string Name { get; set; }
 
-        public int TeamId { get; set; }
-        public Team Team { get; set; }
+        public List<TeamPlayer> TeamPlayers { get; set; } = new List<TeamPlayer>();
 
         public List<PlayerCourseHit> PlayerCourseHits { get; set; } = new List<PlayerCourseHit>();
     }

@@ -5,6 +5,7 @@
 @page "/MiniatureGolf/{GameId}/{Mode}/{TeamNumber}"
 
 @using MiniatureGolf.Models
+@using MiniatureGolf.DAL.Models
 @using Telerik.Blazor;
 
 @inherits MiniatureGolf.Pages.GameScoreboardModel
@@ -32,12 +33,12 @@
             {
                 if (this.Gamestate.Status == Gamestatus.Created || this.Gamestate.Status == Gamestatus.Configuring || this.Gamestate.Status == Gamestatus.Finished)
                 {
-                    <button type="button" class="btn btn-primary" disabled="@(!(this.Gamestate.Teams.Single(a => a.Number == 0).Players.Count > 0 || this.Gamestate.Courses.Count > 0))" onclick="@(this.CreateNewGame)">new game</button>
+                    <button type="button" class="btn btn-primary" disabled="@(!(this.Gamestate.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count() > 0 || this.Gamestate.Game.Courses.Count > 0))" onclick="@(this.CreateNewGame)">new game</button>
                 }
 
                 if (this.Gamestate.Status == Gamestatus.Configuring)
                 {
-                    <button type="button" class="btn btn-success" disabled="@(!(this.Gamestate.Teams.Single(a => a.Number == 0).Players.Count > 0 && this.Gamestate.Courses.Count > 0))" onclick="@(this.StartGame)">start game</button>
+                    <button type="button" class="btn btn-success" disabled="@(!(this.Gamestate.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count() > 0 && this.Gamestate.Game.Courses.Count > 0))" onclick="@(this.StartGame)">start game</button>
                 }
 
                 if (this.Gamestate.Status == Gamestatus.Running)
@@ -46,19 +47,29 @@
                 }
             }
 
-            @if (this.Gamestate.Teams.Count(a => a.Players.Any()) > 2)
+            @if (this.Gamestate.Game.Teams.Count(a => a.TeamPlayers.Select(a => a.Player).Any()) > 2)
             {
-                <TelerikDropDownList Data="@this.Gamestate.Teams.Where(a => a.Players.Count > 0)" bind-value="@this.SelectedTeamNumber" ValueField="@nameof(Team.Number)" TextField="@nameof(Team.Name)"
-                                     Height="38" Width="140" PopupHeight="200" TItem="@Team" TValue="@int" />
+                <TelerikDropDownList Data="@this.Gamestate?.Game?.Teams?.Where(a => a.TeamPlayers?.Select(a => a.Player).Count() > 0).ToList()"
+                                     bind-value="@this.SelectedTeamNumber"
+                                     ValueField="@nameof(Team.Number)"
+                                     TextField="@nameof(Team.Name)"
+                                     TItem="@Team" TValue="@int"
+                                     Height="38px" Width="140px" PopupHeight="200px" />
             }
         </span>
 
         <span class="c-flexHorizontalContainer c-flexHorizontalChildRight">
             @if (this.CurrentUserMode == UserMode.Editor)
             {
-                <TelerikDropDownList Data="@this.ShareModes" bind-value="@this.SelectedShareMode" ValueField="@nameof(UserModeDropDownItem.ModeId)" TextField="@nameof(UserModeDropDownItem.Name)" Height="38" Width="160px" PopupHeight="90" TItem="@UserModeDropDownItem" TValue="@int" />
+                <TelerikDropDownList Data="@this.ShareModes" 
+                                     bind-value="@this.SelectedShareMode" 
+                                     ValueField="@nameof(UserModeDropDownItem.ModeId)" 
+                                     TextField="@nameof(UserModeDropDownItem.Name)"
+                                     TItem="@UserModeDropDownItem" TValue="@int"
+                                     Height="38px" Width="160px" PopupHeight="90px"
+                                     />
             }
-            <a class="btn btn-light c-flexHorizontalChildRight" href="@($"/MiniatureGolf/{this.Gamestate.Id}/{(int)this.SelectedShareMode}/{this.SelectedTeamNumber}")" role="button"><span class="oi oi-link-intact">  share</span></a>
+            <a class="btn btn-light c-flexHorizontalChildRight" href="@($"/MiniatureGolf/{this.Gamestate.Game.GUID}/{(int)this.SelectedShareMode}/{this.SelectedTeamNumber}")" role="button"><span class="oi oi-link-intact">  share</span></a>
         </span>
     </div>
 
@@ -66,14 +77,14 @@
     {
         <div>
             <span class="c-rowElement">
-                <TelerikButton Class="c-increaseButton" OnClick="@this.RemovePlayer" Enabled="@(this.Gamestate.Teams.Single(a => a.Number == 0).Players.Count > 0)">-</TelerikButton>
+                <TelerikButton Class="c-increaseButton" OnClick="@this.RemovePlayer" Enabled="@(this.Gamestate.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count() > 0)">-</TelerikButton>
                 <TelerikTextBox Label="Player" bind-value="@PlayerNameToAdd" />
                 <TelerikButton Class="c-increaseButton" OnClick="@this.AddPlayer">+</TelerikButton>
                 <TelerikButton Icon="myspace" OnClick="@this.CreateNewTeam">new team</TelerikButton>
             </span>
 
             <span class="c-rowElement">
-                <TelerikButton Class="c-increaseButton" OnClick="@this.RemoveCourse" Enabled="@(this.Gamestate.Courses.Count > 0)">-</TelerikButton>
+                <TelerikButton Class="c-increaseButton" OnClick="@this.RemoveCourse" Enabled="@(this.Gamestate.Game.Courses.Count > 0)">-</TelerikButton>
                 <span class="k-widget k-numerictextbox c-numberInputField">
                     <span class="k-numeric-wrap">
                         <input class="k-input k-formatted-value" bind="@this.CourseParNumberToAdd" title="Par" disabled />
@@ -108,7 +119,7 @@
 </div>
 
 <div style="position: relative; margin-top: -10px; min-height: 167px; height: calc(100vh - @((this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Configuring) ? "250" : "193")px);">
-    <TelerikGrid Data=@this.Gamestate.Courses Height="100%">
+    <TelerikGrid Data=@this.Gamestate.Game.Courses Height="100%">
         <TelerikGridColumns>
             @if (this.ShowColumns)
             {
@@ -124,11 +135,11 @@
                                     {
                                         <span class="oi oi-aperture c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" style="color: darkred;"></span>
                                     }
-                                    else if (this.GetPlayerHitsInViewForCourse(c).Any() && this.GetPlayerHitsInViewForCourse(c).All(a => a.Value != null))
+                                    else if (this.GetCurrentCourseStateForView(c) == CourseState.Finished)
                                     {
                                         <span class="oi oi-check c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" style="color: green;" />
                                     }
-                                    else if (this.GetPlayerHitsInViewForCourse(c).Any(a => a.Value != null))
+                                    else if (this.GetCurrentCourseStateForView(c) == CourseState.Started)
                                     {
                                         <span class="oi oi-aperture c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" style="color: darkseagreen;"></span>
                                     }
@@ -137,11 +148,11 @@
                             else
                             {
                                 <div>
-                                    @if (this.GetPlayerHitsInViewForCourse(c).Any() && this.GetPlayerHitsInViewForCourse(c).All(a => a.Value != null))
+                                    @if (this.GetCurrentCourseStateForView(c) == CourseState.Finished)
                                     {
                                         <span class="oi oi-check c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" style="color: green;" />
                                     }
-                                    else if (this.GetPlayerHitsInViewForCourse(c).Any(a => a.Value != null))
+                                    else if (this.GetCurrentCourseStateForView(c) == CourseState.Started)
                                     {
                                         <span class="oi oi-aperture c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" style="color: darkseagreen;"></span>
                                     }
@@ -177,30 +188,30 @@
                     </Template>
                 </TelerikGridColumn>
 
-                @if (this.Gamestate.Teams.Single(a => a.Number == 0).Players.Count == 0)
+                @if (this.Gamestate.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count() == 0)
                 {
                     <TelerikGridColumn Title="" Field="" />
                 }
 
                 @foreach (var player in this.RankedPlayers)
                 {
-                    <TelerikGridColumn Title="@($"{player.Name} ({this.Gamestate.Courses.Sum(a => a.PlayerHits[player.Id] ?? 0)})")">
+                    <TelerikGridColumn Title="@($"{player.Name} ({player.PlayerCourseHits.Sum(a => a.HitCount ?? 0)})")">
                         <Template>
                             @if (context is Course c)
                             {
                                 if (this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Running)
                                 {
                                     <div class="c-alignCenter c-clickableCell c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" onclick="@(() => this.IncreaseHitCount(context as Course, player))">
-                                        <div class="c-ratingColorize" data-hitDiffToPar="@(c.PlayerHits[player.Id] - c.Par)">
-                                            <div class="c-alignCenter">@(c.PlayerHits[player.Id])</div>
+                                        <div class="c-ratingColorize" data-hitDiffToPar="@((c.PlayerCourseHits.SingleOrDefault(a => a.Player == player)?.HitCount ?? 0) - c.Par)">
+                                            <div class="c-alignCenter">@((c.PlayerCourseHits.SingleOrDefault(a => a.Player == player)?.HitCount))</div>
                                         </div>
                                     </div>
                                 }
                                 else
                                 {
                                     <div class="c-alignCenter c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")">
-                                        <div class="c-ratingColorize" data-hitDiffToPar="@(c.PlayerHits[player.Id] - c.Par)">
-                                            <div class="c-alignCenter">@(c.PlayerHits[player.Id])</div>
+                                        <div class="c-ratingColorize" data-hitDiffToPar="@((c.PlayerCourseHits.SingleOrDefault(a => a.Player == player)?.HitCount ?? 0) - c.Par)">
+                                            <div class="c-alignCenter">@((c.PlayerCourseHits.SingleOrDefault(a => a.Player == player)?.HitCount))</div>
                                         </div>
                                     </div>
                                 }
