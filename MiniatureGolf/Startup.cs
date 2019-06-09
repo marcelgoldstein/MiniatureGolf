@@ -5,7 +5,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MiniatureGolf.DAL;
-using MiniatureGolf.Data;
 using MiniatureGolf.Services;
 
 namespace MiniatureGolf
@@ -27,7 +26,6 @@ namespace MiniatureGolf
             services.AddServerSideBlazor();
             services.AddTelerikBlazor();
 
-            services.AddSingleton<WeatherForecastService>();
             services.AddSingleton<GameService>();
 
             services.AddDbContext<MiniatureGolfContext>(optionsBuilder =>
