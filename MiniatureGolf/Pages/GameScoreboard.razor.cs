@@ -366,6 +366,8 @@ namespace MiniatureGolf.Pages
                 this.Gamestate.Game.StateId = (int)Gamestatus.Finished;
                 this.Gamestate.Game.FinishTime = DateTime.UtcNow;
 
+                this.Gamestate.IsAutoSaveActive = false; // nach fertigstellen die autosave-modus wieder deaktivieren
+
                 this.GameService.SaveToDatabase(this.Gamestate);
 
                 this.Gamestate.RaiseStateChanged(this, new StateChangedContext { Key = Context_GameFinished });
@@ -388,6 +390,11 @@ namespace MiniatureGolf.Pages
         {
             this.CurrentUserMode = newMode;
             this.RefreshPlayerRanking();
+
+            if (newMode == UserMode.Editor && this.Gamestate.Status <= Gamestatus.Running)
+            { // gamestate als 'IsAutoSaveActive' markieren, da dort potenziell änderungen geschehen
+                this.Gamestate.IsAutoSaveActive = true;
+            }
 
             this.StateHasChanged();
         }

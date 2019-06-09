@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MiniatureGolf.DAL;
 using MiniatureGolf.Services;
+using MiniatureGolf.Settings;
 
 namespace MiniatureGolf
 {
@@ -33,6 +34,10 @@ namespace MiniatureGolf
                 var conStr = this.configuration.GetConnectionString("MiniatureGolfDb");
                 optionsBuilder.UseNpgsql(conStr);
             }, ServiceLifetime.Transient, ServiceLifetime.Transient);
+
+            // Load/Bind custom configuration
+            var settingsSection = configuration.GetSection(nameof(AppSettings));
+            services.Configure<AppSettings>(settingsSection); // this makes them resolvable through -> IOptions<AppSettings>
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

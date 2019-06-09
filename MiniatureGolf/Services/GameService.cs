@@ -1,12 +1,17 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using MiniatureGolf.DAL;
 using MiniatureGolf.DAL.Models;
 using MiniatureGolf.Models;
+using MiniatureGolf.Settings;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace MiniatureGolf.Services
 {
@@ -26,6 +31,7 @@ namespace MiniatureGolf.Services
         #region Fields
         private readonly IServiceProvider services;
         private readonly IHostApplicationLifetime applicationLifetime;
+        private readonly AppSettings appSettings;
         #endregion Fields
 
         #region Properties
@@ -33,19 +39,38 @@ namespace MiniatureGolf.Services
         #endregion Properties
 
         #region ctor
-        public GameService(IServiceProvider services, IHostApplicationLifetime applicationLifetime)
+        public GameService(IServiceProvider services, IHostApplicationLifetime applicationLifetime, IOptions<AppSettings> appSettings)
         {
             this.services = services;
             this.applicationLifetime = applicationLifetime;
+            this.appSettings = appSettings.Value;
 
+            var autoSaveTaskToken = new CancellationTokenSource();
             this.applicationLifetime.ApplicationStopping.Register(() =>
             {
+                autoSaveTaskToken.Cancel();
                 this.SaveAllOpenGames();
             });
+
+            _ = this.RunAutoSaveTask(autoSaveTaskToken.Token);
         }
         #endregion ctor
 
         #region Methods
+        #region Workers
+        private async Task RunAutoSaveTask(CancellationToken ct)
+        {
+            await Task.Run(async () =>
+            {
+                while (ct.IsCancellationRequested == false)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(this.appSettings.WorkerSettings.AutoSaveIntervalInSeconds), ct);
+                    this.SaveAutoSaveActivatedGames();
+                }
+            }, ct);
+        }
+        #endregion Workers
+
         #region Games
         public bool TryGetGame(string gameId, out Gamestate gamestate)
         {
@@ -200,6 +225,19 @@ namespace MiniatureGolf.Services
             lock (this.Games)
             {
                 var gamesToSave = this.Games.Where(a => a.Value.Game.StateId > (int)Gamestatus.Created).Select(a => a.Value).ToList();
+
+                foreach (var gs in gamesToSave)
+                {
+                    this.SaveToDatabase(gs);
+                }
+            }
+        }
+
+        private void SaveAutoSaveActivatedGames()
+        {
+            lock (this.Games)
+            {
+                var gamesToSave = this.Games.Where(a => a.Value.IsAutoSaveActive).Select(a => a.Value).ToList();
 
                 foreach (var gs in gamesToSave)
                 {

@@ -31,6 +31,7 @@ namespace MiniatureGolf.Models
         public string StatusText => Enum.GetName(typeof(Gamestatus), this.Game.StateId).ToLower();
         public string PlayersText => $"{this.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count():#00}:    {string.Join(", ", this.GetPreparedPlayersForGame(this))}";
         public string Time => this.GetTimeText();
+        public bool IsAutoSaveActive { get; set; }
         #endregion Properties
 
         #region Events
