@@ -54,7 +54,7 @@
                                      ValueField="@nameof(Team.Number)"
                                      TextField="@nameof(Team.Name)"
                                      TItem="@Team" TValue="@int"
-                                     Height="38px" Width="140px" PopupHeight="200px" />
+                                     Height="38px" Width="140px" PopupHeight="Auto" />
             }
         </span>
 
@@ -66,7 +66,7 @@
                                      ValueField="@nameof(UserModeDropDownItem.ModeId)" 
                                      TextField="@nameof(UserModeDropDownItem.Name)"
                                      TItem="@UserModeDropDownItem" TValue="@int"
-                                     Height="38px" Width="160px" PopupHeight="90px"
+                                     Height="38px" Width="160px" PopupHeight="Auto"
                                      />
             }
             <a class="btn btn-light c-flexHorizontalChildRight" href="@($"/MiniatureGolf/{this.Gamestate.Game.GUID}/{(this.CurrentUserMode switch { UserMode.Editor => (int)this.SelectedShareMode, UserMode.Spectator => (int)UserMode.Spectator, UserMode.SpectatorReadOnly => (int)UserMode.SpectatorReadOnly, _ => (int)UserMode.SpectatorReadOnly })}/{this.SelectedTeamNumber}")" role="button"><span class="oi oi-link-intact">  share</span></a>

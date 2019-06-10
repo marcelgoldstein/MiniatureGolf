@@ -190,8 +190,8 @@ namespace MiniatureGolf.Pages
             if (context.Key == Context_Teams_Players)
             {
                 if (this.Gamestate.Game.Teams.Contains(this.SelectedTeam) == false)
-                {
-                    this.SelectedTeamNumber = 0; // default-team (0) auswählen
+                { // ist das ausgewählte team nicht mehr vorhande, das default-team (0) auswählen
+                    this.SelectedTeamNumber = 0;
                 }
 
                 this.RefreshPlayerRanking();
@@ -277,8 +277,8 @@ namespace MiniatureGolf.Pages
             if (this.GameService.TryRemovePlayer(this.Gamestate.Game.GUID))
             {
                 if (this.Gamestate.Game.Teams.Contains(this.SelectedTeam) == false)
-                {
-                    this.SelectedTeamNumber = 0; // default-team (0) auswählen
+                { // ist das ausgewählte team nicht mehr vorhande, das default-team (0) auswählen
+                    this.SelectedTeamNumber = 0;
                 }
 
                 this.RefreshPlayerRanking();
@@ -378,6 +378,9 @@ namespace MiniatureGolf.Pages
         {
             if (this.Gamestate != null)
             {
+                // remove empty teams that remained from configuration
+                this.GameService.RemoveEmptyTeams(this.Gamestate.Game.GUID);
+
                 this.Gamestate.Game.StateId = (int)Gamestatus.Running;
                 this.Gamestate.Game.StartTime = DateTime.UtcNow;
 
