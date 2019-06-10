@@ -10,6 +10,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		nuget.config = nuget.config
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiniatureGolf.DAL", "MiniatureGolf.DAL\MiniatureGolf.DAL.csproj", "{2B6F0970-F85D-44AA-B345-3E03CCB46EEA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,6 +22,10 @@ Global
 		{6AF4704B-0FEB-4DBE-AE7A-51121DA4031F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6AF4704B-0FEB-4DBE-AE7A-51121DA4031F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6AF4704B-0FEB-4DBE-AE7A-51121DA4031F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2B6F0970-F85D-44AA-B345-3E03CCB46EEA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2B6F0970-F85D-44AA-B345-3E03CCB46EEA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2B6F0970-F85D-44AA-B345-3E03CCB46EEA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2B6F0970-F85D-44AA-B345-3E03CCB46EEA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MiniatureGolf.Models;
 using MiniatureGolf.Services;
+using MiniatureGolf.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MiniatureGolf.Pages
@@ -24,7 +26,21 @@ namespace MiniatureGolf.Pages
 
         private string playerFilterInput;
         public string PlayerFilterInput { get => playerFilterInput; set { playerFilterInput = value; this.LoadGames(); } }
+
+        public bool IsGridBusyIndicatorVisible { get; set; }
+        public bool IsGridBusyIndicatorOpactyAnimationTrigger { get; set; }
+        protected RedundantExecutionSuppressor IsGridBusyIndicatorHelper { private set; get; }
         #endregion Properties
+
+        #region ctor
+        public GamesListModel()
+        {
+            this.IsGridBusyIndicatorHelper = new RedundantExecutionSuppressor(async (t) => 
+            {
+                await this.LoadGamesInternalAsync(t);
+            }, TimeSpan.FromSeconds(0.2));
+        }
+        #endregion ctor
 
         #region Methods
         protected override Task OnInitAsync()
@@ -38,14 +54,38 @@ namespace MiniatureGolf.Pages
 
         protected void LoadGames()
         {
-            var state = (this.SelectedFilterStateId == -1 ? (Gamestatus?)null : (Gamestatus?)this.SelectedFilterStateId);
+            this.IsGridBusyIndicatorHelper.Push();
+        }
 
-            this.CurrentGames = this.GameService
-                .GetGames(state, this.SelectedDateFilter)
-                .Where(a => string.IsNullOrWhiteSpace(this.PlayerFilterInput) || a.PlayersText.ToLower().Contains(this.PlayerFilterInput.ToLower()))
-                .OrderBy(a => a.CreationTime)
-                .ThenBy(a => a.FinishTime)
-                .ToList();
+        private async Task LoadGamesInternalAsync(CancellationToken t)
+        {
+            this.IsGridBusyIndicatorVisible = true;
+            this.IsGridBusyIndicatorOpactyAnimationTrigger = true;
+            this.CurrentGames = new List<Gamestate>();
+            await this.Invoke(this.StateHasChanged);
+
+            var state = (this.SelectedFilterStateId == -1 ? (Gamestatus?)null : (Gamestatus?)this.SelectedFilterStateId);
+            var dateFilter = this.SelectedDateFilter;
+            var playerFilterInput = this.PlayerFilterInput?.ToLower();
+
+            await Task.Run(() =>
+            {
+                var games = this.GameService
+                    .GetGames(state, dateFilter)
+                        .Where(a => string.IsNullOrWhiteSpace(playerFilterInput) || a.PlayersText.ToLower().Contains(playerFilterInput))
+                        .OrderBy(a => a.Game.CreationTime)
+                        .ThenBy(a => a.Game.FinishTime)
+                        .ToList();
+                t.ThrowIfCancellationRequested();
+                this.CurrentGames = games;
+            });
+
+            this.IsGridBusyIndicatorOpactyAnimationTrigger = false;
+            await this.Invoke(this.StateHasChanged);
+            await Task.Delay(1000);
+            t.ThrowIfCancellationRequested();
+            this.IsGridBusyIndicatorVisible = false;
+            await this.Invoke(this.StateHasChanged);
         }
 
         protected void FillFilterStates()
@@ -61,7 +101,7 @@ namespace MiniatureGolf.Pages
 
         protected string GetButtonClassForState(Gamestate gs)
         {
-            switch (gs.Status)
+            switch ((Gamestatus)gs.Game.StateId)
             {
                 case Gamestatus.Created:
                 case Gamestatus.Configuring:

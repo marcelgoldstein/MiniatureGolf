@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
+using MiniatureGolf.DAL.Models;
 using MiniatureGolf.Models;
 using MiniatureGolf.Services;
 using MiniatureGolf.Tools;
@@ -20,6 +21,15 @@ namespace MiniatureGolf.Pages
         protected const string Context_Courses = nameof(Context_Courses);
         protected const string Context_Teams_Players = nameof(Context_Teams_Players);
         #endregion Const
+
+        #region Enums
+        public enum CourseState
+        {
+            Unstarted = 0,
+            Started = 1,
+            Finished = 2,
+        }
+        #endregion Enums
 
         #region Variables
         private readonly List<string> autoRefreshEmojis = new List<string> { "🐒", "🦍", "🐩", "🐕", "🐈", "🐅", "🐆", "🐎", "🦌", "🦏", "🦛", "🐂", "🐃", "🐄", "🐖", "🐏", "🐑", "🐐", "🐪", "🐫", "🦙", "🦘", "🦡", "🐘", "🐁", "🐀", "🦔", "🐇", "🐿", "🦎", "🐊", "🐢", "🐍", "🐉", "🦕", "🦖", "🦈", "🐬", "🐳", "🐋", "🐟", "🐠", "🐡", "🦐", "🦑", "🐙", "🦞", "🦀", "🐚", "🦆", "🐓", "🦃", "🦅", "🕊", "🦢", "🦜", "🦚", "🦉", "🐦", "🐧", "🐥", "🐤", "🐣", "🦇", "🦋", "🐌", "🐛", "🦟", "🦗", "🐜", "🐝", "🐞", "🦂", "🕷" };
@@ -101,6 +111,7 @@ namespace MiniatureGolf.Pages
                 desiredUserMode = UserMode.Editor;
                 this.CreateSampleGame();
                 this.ChangeUserMode(desiredUserMode);
+                this.SelectedShareMode = (int)UserMode.Editor;
             }
             else
             {
@@ -111,6 +122,9 @@ namespace MiniatureGolf.Pages
                 else
                 {
                     desiredUserMode = (UserMode)Convert.ToInt32(this.Mode);
+
+                    if (desiredUserMode == UserMode.Editor)
+                        this.SelectedShareMode = (int)UserMode.Editor;
                 }
 
                 if (this.GameService.TryGetGame(this.GameId, out var gs))
@@ -121,7 +135,7 @@ namespace MiniatureGolf.Pages
 
                     if (!string.IsNullOrWhiteSpace(this.TeamNumber))
                     {
-                        var t = this.Gamestate.Teams.SingleOrDefault(a => a.Number == Convert.ToInt32(this.TeamNumber));
+                        var t = this.Gamestate.Game.Teams.SingleOrDefault(a => a.Number == Convert.ToInt32(this.TeamNumber));
                         if (t != null)
                         { // ein gültiges team wurde per parameter angesteuert
                             this.SelectedTeamNumber = t.Number;
@@ -135,6 +149,7 @@ namespace MiniatureGolf.Pages
                     this.IsNotificationWindowVisible = true;
                     this.CreateSampleGame();
                     this.ChangeUserMode(UserMode.Editor);
+                    this.SelectedShareMode = (int)UserMode.Editor;
                 }
             }
 
@@ -158,23 +173,23 @@ namespace MiniatureGolf.Pages
             if (caller == this)
                 return; // nur events, welche von anderen  Page-Instanzen ausgelöst wurden sind relevant
 
-            if ((sender as Gamestate)?.Id != this.Gamestate?.Id)
+            if ((sender as Gamestate)?.Game.GUID != this.Gamestate?.Game.GUID)
                 return; // nicht das eigene 'game'
 
             if (context.Key == Context_HitCount)
             {
-                if (this.SelectedTeam.Players.Contains(context.Payload as Player))
+                if (this.SelectedTeam.TeamPlayers.Any(a => a.Player == (context.Payload as Player)))
                 { // nur wenn der betroffenen Spieler im aktuell angezeigten Team ist
                     this.ShowOuterViewEditOverlay = true;
                     this.OuterViewEditOverlayAnimationTrigger = true;
                     this.RefreshPlayerRanking();
-                    this.OuterViewEditOverlayHelper.Push(); 
+                    this.OuterViewEditOverlayHelper.Push();
                 }
             }
 
             if (context.Key == Context_Teams_Players)
             {
-                if (this.Gamestate.Teams.Contains(this.SelectedTeam) == false)
+                if (this.Gamestate.Game.Teams.Contains(this.SelectedTeam) == false)
                 {
                     this.SelectedTeamNumber = 0; // default-team (0) auswählen
                 }
@@ -211,43 +226,43 @@ namespace MiniatureGolf.Pages
             this.AddPlayer();
 
             // Peter
-            var p1 = this.Gamestate.Teams.Single(a => a.Number == 0).Players[0];
-            this.Gamestate.Courses[0].PlayerHits[p1.Id] = 5;
-            this.Gamestate.Courses[1].PlayerHits[p1.Id] = 4;
-            this.Gamestate.Courses[2].PlayerHits[p1.Id] = 5;
-            this.Gamestate.Courses[3].PlayerHits[p1.Id] = 2;
-            this.Gamestate.Courses[4].PlayerHits[p1.Id] = 5;
+            var p1 = this.Gamestate.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers[0].Player;
+            this.IncreaseHitCountInternal(this.Gamestate.Game.Courses[0], p1, 5);
+            this.IncreaseHitCountInternal(this.Gamestate.Game.Courses[1], p1, 4);
+            this.IncreaseHitCountInternal(this.Gamestate.Game.Courses[2], p1, 5);
+            this.IncreaseHitCountInternal(this.Gamestate.Game.Courses[3], p1, 2);
+            this.IncreaseHitCountInternal(this.Gamestate.Game.Courses[4], p1, 5);
 
             // Hugo
-            var p2 = this.Gamestate.Teams.Single(a => a.Number == 0).Players[1];
-            this.Gamestate.Courses[0].PlayerHits[p2.Id] = 3;
-            this.Gamestate.Courses[1].PlayerHits[p2.Id] = 2;
-            this.Gamestate.Courses[2].PlayerHits[p2.Id] = 3;
-            this.Gamestate.Courses[3].PlayerHits[p2.Id] = 3;
-            this.Gamestate.Courses[4].PlayerHits[p2.Id] = 4;
+            var p2 = this.Gamestate.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers[1].Player;
+            this.IncreaseHitCountInternal(this.Gamestate.Game.Courses[0], p2, 3);
+            this.IncreaseHitCountInternal(this.Gamestate.Game.Courses[1], p2, 2);
+            this.IncreaseHitCountInternal(this.Gamestate.Game.Courses[2], p2, 3);
+            this.IncreaseHitCountInternal(this.Gamestate.Game.Courses[3], p2, 3);
+            this.IncreaseHitCountInternal(this.Gamestate.Game.Courses[4], p2, 4);
 
             // Melissa
-            var p3 = this.Gamestate.Teams.Single(a => a.Number == 0).Players[2];
-            this.Gamestate.Courses[0].PlayerHits[p3.Id] = 2;
-            this.Gamestate.Courses[1].PlayerHits[p3.Id] = 4;
-            this.Gamestate.Courses[2].PlayerHits[p3.Id] = 4;
-            this.Gamestate.Courses[3].PlayerHits[p3.Id] = 2;
-            this.Gamestate.Courses[4].PlayerHits[p3.Id] = 1;
+            var p3 = this.Gamestate.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers[2].Player;
+            this.IncreaseHitCountInternal(this.Gamestate.Game.Courses[0], p3, 2);
+            this.IncreaseHitCountInternal(this.Gamestate.Game.Courses[1], p3, 4);
+            this.IncreaseHitCountInternal(this.Gamestate.Game.Courses[2], p3, 4);
+            this.IncreaseHitCountInternal(this.Gamestate.Game.Courses[3], p3, 2);
+            this.IncreaseHitCountInternal(this.Gamestate.Game.Courses[4], p3, 1);
 
             // Saul
-            var p4 = this.Gamestate.Teams.Single(a => a.Number == 0).Players[3];
-            this.Gamestate.Courses[0].PlayerHits[p4.Id] = 4;
-            this.Gamestate.Courses[1].PlayerHits[p4.Id] = 3;
-            this.Gamestate.Courses[2].PlayerHits[p4.Id] = 4;
-            this.Gamestate.Courses[3].PlayerHits[p4.Id] = 2;
-            this.Gamestate.Courses[4].PlayerHits[p4.Id] = 4;
+            var p4 = this.Gamestate.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers[3].Player;
+            this.IncreaseHitCountInternal(this.Gamestate.Game.Courses[0], p4, 4);
+            this.IncreaseHitCountInternal(this.Gamestate.Game.Courses[1], p4, 3);
+            this.IncreaseHitCountInternal(this.Gamestate.Game.Courses[2], p4, 4);
+            this.IncreaseHitCountInternal(this.Gamestate.Game.Courses[3], p4, 2);
+            this.IncreaseHitCountInternal(this.Gamestate.Game.Courses[4], p4, 4);
 
             this.RefreshPlayerRanking();
         }
 
         protected void AddPlayer()
         {
-            if (this.GameService.TryAddPlayer(this.Gamestate.Id, this.PlayerNameToAdd))
+            if (this.GameService.TryAddPlayer(this.Gamestate.Game.GUID, this.PlayerNameToAdd))
             {
                 this.PlayerNameToAdd = null;
 
@@ -259,9 +274,9 @@ namespace MiniatureGolf.Pages
 
         protected void RemovePlayer()
         {
-            if (this.GameService.TryRemovePlayer(this.Gamestate.Id))
+            if (this.GameService.TryRemovePlayer(this.Gamestate.Game.GUID))
             {
-                if (this.Gamestate.Teams.Contains(this.SelectedTeam) == false)
+                if (this.Gamestate.Game.Teams.Contains(this.SelectedTeam) == false)
                 {
                     this.SelectedTeamNumber = 0; // default-team (0) auswählen
                 }
@@ -274,7 +289,7 @@ namespace MiniatureGolf.Pages
 
         protected void CreateNewTeam()
         {
-            if (this.GameService.TryAddTeam(this.Gamestate.Id))
+            if (this.GameService.TryAddTeam(this.Gamestate.Game.GUID))
             {
                 this.Gamestate.RaiseStateChanged(this, new StateChangedContext { Key = Context_Teams_Players });
             }
@@ -298,7 +313,7 @@ namespace MiniatureGolf.Pages
 
         protected void AddCourse()
         {
-            if (this.GameService.TryAddCourse(this.Gamestate.Id, this.CourseParNumberToAdd))
+            if (this.GameService.TryAddCourse(this.Gamestate.Game.GUID, this.CourseParNumberToAdd))
             {
                 this.Gamestate.RaiseStateChanged(this, new StateChangedContext { Key = Context_Courses });
             }
@@ -306,7 +321,7 @@ namespace MiniatureGolf.Pages
 
         protected void RemoveCourse()
         {
-            if (this.GameService.TryRemoveCourse(this.Gamestate.Id))
+            if (this.GameService.TryRemoveCourse(this.Gamestate.Game.GUID))
             {
                 this.Gamestate.RaiseStateChanged(this, new StateChangedContext { Key = Context_Courses });
             }
@@ -319,16 +334,16 @@ namespace MiniatureGolf.Pages
                 this.SelectedTeamNumber = 0;
             }
 
-            if (this.Gamestate.Status >= Gamestatus.Running)
+            if (this.Gamestate.Game.StateId >= (int)Gamestatus.Running)
             {
-                this.RankedPlayers = this.SelectedTeam.Players
-                    .OrderByDescending(a => this.Gamestate.Courses.Count(b => b.PlayerHits[a.Id] != null)) // absteigend nach anzahl gespielter kurse
-                    .ThenBy(a => this.Gamestate.Courses.Sum(b => b.PlayerHits[a.Id])) // aufsteigend nach summe der benötigten schläge
+                this.RankedPlayers = this.SelectedTeam.TeamPlayers.Select(a => a.Player)
+                    .OrderByDescending(a => a.PlayerCourseHits.Count(b => b.HitCount != null)) // absteigend nach anzahl gespielter kurse
+                    .ThenBy(a => a.PlayerCourseHits.Sum(b => b.HitCount ?? 0)) // aufsteigend nach summe der benötigten schläge
                     .ToList();
             }
             else
             {
-                this.RankedPlayers = this.SelectedTeam.Players.ToList();
+                this.RankedPlayers = this.SelectedTeam.TeamPlayers.Select(a => a.Player).ToList();
             }
         }
 
@@ -340,7 +355,7 @@ namespace MiniatureGolf.Pages
 
                 this.RefreshPlayerRanking();
 
-                this.Gamestate.Status = Gamestatus.Configuring;
+                this.Gamestate.Game.StateId = (int)Gamestatus.Configuring;
             }
         }
 
@@ -348,8 +363,12 @@ namespace MiniatureGolf.Pages
         {
             if (this.Gamestate != null)
             {
-                this.Gamestate.Status = Gamestatus.Finished;
-                this.Gamestate.FinishTime = DateTime.UtcNow;
+                this.Gamestate.Game.StateId = (int)Gamestatus.Finished;
+                this.Gamestate.Game.FinishTime = DateTime.UtcNow;
+
+                this.Gamestate.IsAutoSaveActive = false; // nach fertigstellen die autosave-modus wieder deaktivieren
+
+                this.GameService.SaveToDatabase(this.Gamestate);
 
                 this.Gamestate.RaiseStateChanged(this, new StateChangedContext { Key = Context_GameFinished });
             }
@@ -359,8 +378,8 @@ namespace MiniatureGolf.Pages
         {
             if (this.Gamestate != null)
             {
-                this.Gamestate.Status = Gamestatus.Running;
-                this.Gamestate.StartTime = DateTime.UtcNow;
+                this.Gamestate.Game.StateId = (int)Gamestatus.Running;
+                this.Gamestate.Game.StartTime = DateTime.UtcNow;
 
                 this.RefreshPlayerRanking();
                 this.Gamestate.RaiseStateChanged(this, new StateChangedContext { Key = Context_GameStarted });
@@ -371,6 +390,11 @@ namespace MiniatureGolf.Pages
         {
             this.CurrentUserMode = newMode;
             this.RefreshPlayerRanking();
+
+            if (newMode == UserMode.Editor && this.Gamestate.Status <= Gamestatus.Running)
+            { // gamestate als 'IsAutoSaveActive' markieren, da dort potenziell änderungen geschehen
+                this.Gamestate.IsAutoSaveActive = true;
+            }
 
             this.StateHasChanged();
         }
@@ -392,37 +416,52 @@ namespace MiniatureGolf.Pages
 
         private void OnSelectedTeamNumberChanged()
         {
-            this.SelectedTeam = this.Gamestate.Teams.SingleOrDefault(a => a.Number == selectedTeamNumber);
+            this.SelectedTeam = this.Gamestate.Game.Teams.SingleOrDefault(a => a.Number == selectedTeamNumber);
             this.RefreshPlayerRanking();
         }
 
-        protected Dictionary<string, int?> GetPlayerHitsInViewForCourse(Course c)
+        protected CourseState GetCurrentCourseStateForView(Course c)
         {
-            var playersIds = this.SelectedTeam.Players.Select(a => a.Id);
-
-            return c.PlayerHits.Where(a => playersIds.Contains(a.Key)).ToDictionary(a => a.Key, a => a.Value);
+            var relevantPlayers = this.SelectedTeam.TeamPlayers.Select(a => a.Player);
+            if (relevantPlayers.All(a => a.PlayerCourseHits.Any(b => b.Course == c && b.HitCount != null)))
+                return CourseState.Finished; // alle spieler haben für diesen course einen hitcount != null
+            else if (relevantPlayers.Any(a => a.PlayerCourseHits.Any(b => b.Course == c && b.HitCount != null)))
+                return CourseState.Started; // mindestens ein spieler hat für diesen course einen hitcount != null
+            else
+                return CourseState.Unstarted; // ansonsten: keiner der spieler hat für diesen course einen hitcount != null
         }
 
-        protected void IncreaseHitCount(Course c, Player p)
+        protected void IncreaseHitCount(Course c, Player p, int step = 1)
         {
-            if (c.PlayerHits[p.Id] == null)
-            {
-                c.PlayerHits[p.Id] = 1;
-            }
-            else if (c.PlayerHits[p.Id] < 7)
-            {
-                c.PlayerHits[p.Id]++;
-            }
-            else if (c.PlayerHits[p.Id] == 7)
-            {
-                c.PlayerHits[p.Id] = null;
-            }
+            IncreaseHitCountInternal(c, p, step);
 
             this.RandoPickAutoRefreshEmoji();
             this.AutoRefreshHelper.Push();
 
-            this.SelectedTeam.CurrentCourseNumber = c.Number;
+            if (this.Gamestate.Status == Gamestatus.Running)
+                this.SelectedTeam.CurrentCourseNumber = c.Number;
+
             this.Gamestate.RaiseStateChanged(this, new StateChangedContext { Key = Context_HitCount, Payload = p });
+        }
+
+        private void IncreaseHitCountInternal(Course c, Player p, int step = 1)
+        {
+            if (!(c.PlayerCourseHits.SingleOrDefault(a => a.Player == p) is PlayerCourseHit pch))
+            {
+                pch = new PlayerCourseHit();
+                this.Gamestate.GameDbContext.PlayerCourseHits.Add(pch);
+                pch.Course = c;
+                c.PlayerCourseHits.Add(pch);
+                pch.Player = p;
+                p.PlayerCourseHits.Add(pch);
+            }
+
+            pch.HitCount = (pch.HitCount ?? 0) + step;
+
+            // modulo 8, damit ein überrollen angewendet wird (8, da null/0 bis 7 gleich 8 elemente)
+            pch.HitCount %= 8;
+            // dann 0 durch null ersetzen
+            pch.HitCount = pch.HitCount == 0 ? null : pch.HitCount;
         }
 
         protected void IncreasePar(Course c)
@@ -441,7 +480,7 @@ namespace MiniatureGolf.Pages
 
         protected bool RowShouldBeDisplayedTransparently(Course c)
         {
-            if (this.Gamestate.Status != Gamestatus.Running)
+            if (this.Gamestate.Game.StateId != (int)Gamestatus.Running)
                 return false;
 
             if (this.SelectedTeam.CurrentCourseNumber == null)
