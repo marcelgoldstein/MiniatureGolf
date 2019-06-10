@@ -252,15 +252,18 @@ namespace MiniatureGolf.Services
         {
             if (this.TryGetGame(gameId, out var gs))
             {
-                var c = new Course() { Number = gs.Game.Courses.Count + 1, Par = par };
-                gs.GameDbContext.Courses.Add(c);
+                lock (gs)
+                {
+                    var c = new Course() { Number = gs.Game.Courses.Count + 1, Par = par };
+                    gs.GameDbContext.Courses.Add(c);
 
-                c.Game = gs.Game;
-                gs.Game.Courses.Add(c);
+                    c.Game = gs.Game;
+                    gs.Game.Courses.Add(c);
 
-                gs.Game.Courses = gs.Game.Courses.ToList(); // hack!, damit eine Property-Änderung erkannt wird
+                    gs.Game.Courses = gs.Game.Courses.ToList(); // hack!, damit eine Property-Änderung erkannt wird
 
-                return true;
+                    return true; 
+                }
             }
             else
             {
@@ -272,17 +275,20 @@ namespace MiniatureGolf.Services
         {
             if (this.TryGetGame(gameId, out var gs))
             {
-                if (gs.Game.Courses.Count > 0)
+                lock (gs)
                 {
-                    var c = gs.Game.Courses.LastOrDefault();
-                    c.Game = null;
-                    gs.Game.Courses.Remove(c);
-                    gs.GameDbContext.Courses.Remove(c);
+                    if (gs.Game.Courses.Count > 0)
+                    {
+                        var c = gs.Game.Courses.LastOrDefault();
+                        c.Game = null;
+                        gs.Game.Courses.Remove(c);
+                        gs.GameDbContext.Courses.Remove(c);
 
-                    gs.Game.Courses = gs.Game.Courses.ToList(); // hack!, damit eine Property-Änderung erkannt wird
+                        gs.Game.Courses = gs.Game.Courses.ToList(); // hack!, damit eine Property-Änderung erkannt wird
+                    }
+
+                    return true; 
                 }
-
-                return true;
             }
             else
             {
@@ -296,38 +302,41 @@ namespace MiniatureGolf.Services
         {
             if (this.TryGetGame(gameId, out var gs))
             {
-                if (string.IsNullOrWhiteSpace(name))
+                lock (gs)
                 {
-                    name = $"Player {gs.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count() + 1:00}";
+                    if (string.IsNullOrWhiteSpace(name))
+                    {
+                        name = $"Player {gs.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count() + 1:00}";
+                    }
+
+                    var p = new Player() { Name = name };
+                    gs.GameDbContext.Players.Add(p);
+
+                    var tp = new TeamPlayer();
+                    gs.GameDbContext.TeamPlayers.Add(tp);
+
+                    tp.Player = p;
+                    p.TeamPlayers.Add(tp);
+
+                    // add player to default-team 'all' (which has number '0')
+                    var t = gs.Game.Teams.Single(a => a.IsDefaultTeam);
+                    tp.Team = t;
+                    t.TeamPlayers.Add(tp);
+
+                    // falls ein anderes team als das default-team vorhanden ist, in das neueste team aufnehmen
+                    if (gs.Game.Teams.LastOrDefault(a => a.IsDefaultTeam == false) is Team t2)
+                    {
+                        var tp2 = new TeamPlayer();
+                        gs.GameDbContext.TeamPlayers.Add(tp2);
+
+                        tp2.Player = p;
+                        p.TeamPlayers.Add(tp2);
+                        tp2.Team = t2;
+                        t2.TeamPlayers.Add(tp2);
+                    }
+
+                    return true; 
                 }
-
-                var p = new Player() { Name = name };
-                gs.GameDbContext.Players.Add(p);
-
-                var tp = new TeamPlayer();
-                gs.GameDbContext.TeamPlayers.Add(tp);
-
-                tp.Player = p;
-                p.TeamPlayers.Add(tp);
-
-                // add player to default-team 'all' (which has number '0')
-                var t = gs.Game.Teams.Single(a => a.IsDefaultTeam);
-                tp.Team = t;
-                t.TeamPlayers.Add(tp);
-
-                // falls ein anderes team als das default-team vorhanden ist, in das neueste team aufnehmen
-                if (gs.Game.Teams.LastOrDefault(a => a.IsDefaultTeam == false) is Team t2)
-                {
-                    var tp2 = new TeamPlayer();
-                    gs.GameDbContext.TeamPlayers.Add(tp2);
-
-                    tp2.Player = p;
-                    p.TeamPlayers.Add(tp2);
-                    tp2.Team = t2;
-                    t2.TeamPlayers.Add(tp2);
-                }
-
-                return true;
             }
             else
             {
@@ -339,34 +348,28 @@ namespace MiniatureGolf.Services
         {
             if (this.TryGetGame(gameId, out var gs))
             {
-                if (gs.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).LastOrDefault() is Player p)
+                lock (gs)
                 {
-                    // spieler aus allen teams entfernen
-                    var teams = p.TeamPlayers.Select(a => a.Team).ToList();
-                    foreach (var t in teams)
+                    if (gs.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).LastOrDefault() is Player p)
                     {
-                        var tp = t.TeamPlayers.Single(a => a.Player == p);
-                        tp.Team = null;
-                        t.TeamPlayers.Remove(tp);
-                        tp.Player = null;
-                        p.TeamPlayers.Remove(tp);
+                        // spieler aus allen teams entfernen
+                        var teams = p.TeamPlayers.Select(a => a.Team).ToList();
+                        foreach (var t in teams)
+                        {
+                            var tp = t.TeamPlayers.Single(a => a.Player == p);
+                            tp.Team = null;
+                            t.TeamPlayers.Remove(tp);
+                            tp.Player = null;
+                            p.TeamPlayers.Remove(tp);
 
-                        gs.GameDbContext.TeamPlayers.Remove(tp);
+                            gs.GameDbContext.TeamPlayers.Remove(tp);
+                        }
+
+                        this.RemoveEmptyTeams(gameId);
                     }
 
-                    // alle nicht-default-team teams, welche keiner spieler haben entfernen
-                    var teamsToRemove = gs.Game.Teams.Where(a => a.IsDefaultTeam == false && a.TeamPlayers.Select(b => b.Player).Count() == 0).ToList();
-                    foreach (var ttr in teamsToRemove)
-                    {
-                        ttr.Game = null;
-                        gs.Game.Teams.Remove(ttr);
-
-                        gs.GameDbContext.Teams.Remove(ttr);
-                    }
-
+                    return true; 
                 }
-
-                return true;
             }
             else
             {
@@ -380,34 +383,60 @@ namespace MiniatureGolf.Services
         {
             if (this.TryGetGame(gameId, out var gs))
             {
-                if (gs.Game.Teams.LastOrDefault(a => a.IsDefaultTeam == false) == null)
-                { // erstes nicht-default-team, also alle bisherigen spieler aufnehmen
-                    var t1 = new Team { Number = gs.Game.Teams.Count, Name = $"Team {gs.Game.Teams.Count:00}" };
-                    gs.GameDbContext.Teams.Add(t1);
-                    t1.Game = gs.Game;
-                    gs.Game.Teams.Add(t1);
+                lock (gs)
+                {
+                    if (gs.Game.Teams.LastOrDefault(a => a.IsDefaultTeam == false) == null)
+                    { // erstes nicht-default-team, also alle bisherigen spieler aufnehmen
+                        var t1 = new Team { Number = gs.Game.Teams.Count, Name = $"Team {gs.Game.Teams.Count:00}" };
+                        gs.GameDbContext.Teams.Add(t1);
+                        t1.Game = gs.Game;
+                        gs.Game.Teams.Add(t1);
 
-                    foreach (var p in gs.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).ToList())
-                    {
-                        var tp = new TeamPlayer();
-                        gs.GameDbContext.TeamPlayers.Add(tp);
-                        tp.Player = p;
-                        p.TeamPlayers.Add(tp);
-                        tp.Team = t1;
-                        t1.TeamPlayers.Add(tp);
+                        foreach (var p in gs.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).ToList())
+                        {
+                            var tp = new TeamPlayer();
+                            gs.GameDbContext.TeamPlayers.Add(tp);
+                            tp.Player = p;
+                            p.TeamPlayers.Add(tp);
+                            tp.Team = t1;
+                            t1.TeamPlayers.Add(tp);
+                        }
                     }
+
+                    // nur ein Team erstellen, wenn das letzte offene Team Spieler beinhaltet
+                    if (gs.Game.Teams.LastOrDefault()?.TeamPlayers.Select(a => a.Player).Count() > 0)
+                    {
+                        // neues zweites team erstellen, in welches ab sofort die weiteren player-adds hineinlaufen
+                        var t = new Team { Number = gs.Game.Teams.Count, Name = $"Team {gs.Game.Teams.Count:00}" };
+                        gs.GameDbContext.Teams.Add(t);
+                        t.Game = gs.Game;
+                        gs.Game.Teams.Add(t);
+                    }
+
+                    return true; 
                 }
-
-                // neues zweites team erstellen, in welches ab sofort die weiteren player-adds hineinlaufen
-                var t = new Team { Number = gs.Game.Teams.Count, Name = $"Team {gs.Game.Teams.Count:00}" };
-                gs.GameDbContext.Teams.Add(t);
-                t.Game = gs.Game;
-                gs.Game.Teams.Add(t);
-
-                return true;
             }
 
             return false;
+        }
+
+        public void RemoveEmptyTeams(string gameId)
+        {
+            if (this.TryGetGame(gameId, out var gs))
+            {
+                lock (gs)
+                {
+                    // alle nicht-default-team teams, welche keiner spieler haben entfernen
+                    var teamsToRemove = gs.Game.Teams.Where(a => a.IsDefaultTeam == false && a.TeamPlayers.Select(b => b.Player).Count() == 0).ToList();
+                    foreach (var ttr in teamsToRemove)
+                    {
+                        ttr.Game = null;
+                        gs.Game.Teams.Remove(ttr);
+
+                        gs.GameDbContext.Teams.Remove(ttr);
+                    } 
+                }
+            }
         }
         #endregion Teams
         #endregion Methods

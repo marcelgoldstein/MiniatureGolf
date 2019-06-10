@@ -378,6 +378,9 @@ namespace MiniatureGolf.Pages
         {
             if (this.Gamestate != null)
             {
+                // remove empty teams that remained from configuration
+                this.GameService.RemoveEmptyTeams(this.Gamestate.Game.GUID);
+
                 this.Gamestate.Game.StateId = (int)Gamestatus.Running;
                 this.Gamestate.Game.StartTime = DateTime.UtcNow;
 
