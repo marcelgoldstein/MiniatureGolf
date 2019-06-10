@@ -399,7 +399,7 @@ namespace MiniatureGolf.Services
                 }
 
                 // neues zweites team erstellen, in welches ab sofort die weiteren player-adds hineinlaufen
-                var t = new Team { Number = gs.Game.Teams.Count };
+                var t = new Team { Number = gs.Game.Teams.Count, Name = $"Team {gs.Game.Teams.Count:00}" };
                 gs.GameDbContext.Teams.Add(t);
                 t.Game = gs.Game;
                 gs.Game.Teams.Add(t);
