@@ -1,16 +1,20 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using MiniatureGolf.DAL.Models;
 using MiniatureGolf.Models;
 using MiniatureGolf.Services;
+using MiniatureGolf.Settings;
 using MiniatureGolf.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MiniatureGolf.Pages
 {
-    public class GameScoreboardModel : ComponentBase
+    public class GameScoreboardModel : ComponentBase, IDisposable
     {
         #region Const
         protected const string Context_HitCount = nameof(Context_HitCount);
@@ -33,11 +37,14 @@ namespace MiniatureGolf.Pages
 
         #region Variables
         private readonly List<string> autoRefreshEmojis = new List<string> { "🐒", "🦍", "🐩", "🐕", "🐈", "🐅", "🐆", "🐎", "🦌", "🦏", "🦛", "🐂", "🐃", "🐄", "🐖", "🐏", "🐑", "🐐", "🐪", "🐫", "🦙", "🦘", "🦡", "🐘", "🐁", "🐀", "🦔", "🐇", "🐿", "🦎", "🐊", "🐢", "🐍", "🐉", "🦕", "🦖", "🦈", "🐬", "🐳", "🐋", "🐟", "🐠", "🐡", "🦐", "🦑", "🐙", "🦞", "🦀", "🐚", "🦆", "🐓", "🦃", "🦅", "🕊", "🦢", "🦜", "🦚", "🦉", "🐦", "🐧", "🐥", "🐤", "🐣", "🦇", "🦋", "🐌", "🐛", "🦟", "🦗", "🐜", "🐝", "🐞", "🦂", "🕷" };
+        private CancellationTokenSource mostRecentTouchUpdaterTaskToken;
         #endregion Variables
 
         #region Properties
         [Inject] public GameService GameService { get; private set; }
         [Inject] protected IUriHelper UriHelper { get; private set; }
+        [Inject] protected IOptions<AppSettings> AppSettings { get; private set; }
+        [Inject] protected IHostApplicationLifetime applicationLifetime { get; private set; }
 
         [Parameter] protected string GameId { get; set; }
         [Parameter] protected string Mode { get; set; }
@@ -153,7 +160,30 @@ namespace MiniatureGolf.Pages
                 }
             }
 
+            this.mostRecentTouchUpdaterTaskToken = new CancellationTokenSource();
+
+            this.applicationLifetime.ApplicationStopping.Register(() =>
+            {
+                this.mostRecentTouchUpdaterTaskToken.Cancel();
+            });
+
+            _ = this.StartMostRecentTouchUpdater(this.mostRecentTouchUpdaterTaskToken.Token);
+
             return base.OnParametersSetAsync();
+        }
+
+        private async Task StartMostRecentTouchUpdater(CancellationToken ct)
+        {
+            await Task.Run(async () =>
+            {
+                while (ct.IsCancellationRequested == false)
+                {
+                    await Task.Delay(TimeSpan.FromMinutes(this.AppSettings.Value.WorkerSettings.IdleGamesCacheCleanerSettings.WorkerIntervallInMinutes - (this.AppSettings.Value.WorkerSettings.IdleGamesCacheCleanerSettings.WorkerIntervallInMinutes / 10D)));
+
+                    if (this.Gamestate != null)
+                        this.Gamestate.MostRecentIsActivelyUsedHeartbeatTime = DateTime.UtcNow;
+                }
+            }, ct);
         }
 
         private void SetCurrentGameState(Gamestate gs)
@@ -166,6 +196,8 @@ namespace MiniatureGolf.Pages
 
             if (this.Gamestate != null)
                 this.Gamestate.StateChanged += this.Gamestate_StateChanged;
+
+            this.Gamestate.MostRecentIsActivelyUsedHeartbeatTime = DateTime.UtcNow;
         }
 
         private void Gamestate_StateChanged(object sender, object caller, StateChangedContext context)
@@ -502,6 +534,42 @@ namespace MiniatureGolf.Pages
 
             this.AutoRefreshEmoji = emoji;
         }
+
+        #region IDisposable Support
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    this.mostRecentTouchUpdaterTaskToken.Cancel();
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
+                // TODO: set large fields to null.
+
+                disposedValue = true;
+            }
+        }
+
+        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
+        // ~GameScoreboardModel()
+        // {
+        //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+        //   Dispose(false);
+        // }
+
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+            // TODO: uncomment the following line if the finalizer is overridden above.
+            // GC.SuppressFinalize(this);
+        }
+        #endregion IDisposable Support
         #endregion Methods
 
         protected class UserModeDropDownItem

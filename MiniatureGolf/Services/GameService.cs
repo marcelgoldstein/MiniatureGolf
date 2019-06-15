@@ -46,26 +46,57 @@ namespace MiniatureGolf.Services
             this.appSettings = appSettings.Value;
 
             var autoSaveTaskToken = new CancellationTokenSource();
+            var autoCleanupTaskToken = new CancellationTokenSource();
+            var autoIdleGamesCacheCleanerTaskToken = new CancellationTokenSource();
             this.applicationLifetime.ApplicationStopping.Register(() =>
             {
                 autoSaveTaskToken.Cancel();
+                autoCleanupTaskToken.Cancel();
+                autoIdleGamesCacheCleanerTaskToken.Cancel();
                 this.SaveAllOpenGames();
             });
 
-            _ = this.RunAutoSaveTask(autoSaveTaskToken.Token);
+            // don`t await on purpose so the started thread/task starts running in parallel
+            _ = this.RunAutoSaveTaskAsync(autoSaveTaskToken.Token);
+            _ = this.RunAutoCleanupTaskAsync(autoCleanupTaskToken.Token);
+            _ = this.RunIdleGamesCacheCleanerTaskAsync(autoIdleGamesCacheCleanerTaskToken.Token);
         }
         #endregion ctor
 
         #region Methods
         #region Workers
-        private async Task RunAutoSaveTask(CancellationToken ct)
+        private async Task RunAutoSaveTaskAsync(CancellationToken ct)
         {
             await Task.Run(async () =>
             {
                 while (ct.IsCancellationRequested == false)
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(this.appSettings.WorkerSettings.AutoSaveIntervalInSeconds), ct);
-                    this.SaveAutoSaveActivatedGames();
+                    await Task.Delay(TimeSpan.FromSeconds(this.appSettings.WorkerSettings.AutoSaveWorkerSettings.AutoSaveIntervalInSeconds), ct);
+                    this.AutoSaveActivatedGames();
+                }
+            }, ct);
+        }
+
+        private async Task RunAutoCleanupTaskAsync(CancellationToken ct)
+        {
+            await Task.Run(async () =>
+            {
+                while (ct.IsCancellationRequested == false)
+                {
+                    this.ClearUnstartedGames();
+                    await Task.Delay(TimeSpan.FromMinutes(this.appSettings.WorkerSettings.UnstartedGamesCleanerSettings.WorkerIntervallInMinutes));
+                }
+            }, ct);
+        }
+
+        private async Task RunIdleGamesCacheCleanerTaskAsync(CancellationToken ct)
+        {
+            await Task.Run(async () =>
+            {
+                while (ct.IsCancellationRequested == false)
+                {
+                    this.ClearIdleGamesFromCache();
+                    await Task.Delay(TimeSpan.FromMinutes(this.appSettings.WorkerSettings.IdleGamesCacheCleanerSettings.WorkerIntervallInMinutes));
                 }
             }, ct);
         }
@@ -177,7 +208,7 @@ namespace MiniatureGolf.Services
 
                 var gamesFromCache = this.Games
                     .Where(a => (status == null || a.Value.Game.StateId == (int)status)
-                        && a.Value.Game.CreationTime >= compareDate)
+                        && (a.Value.Game.StartTime >= compareDate || a.Value.Game.CreationTime >= compareDate))
                     .Select(a => a.Value)
                     .ToList();
 
@@ -192,7 +223,7 @@ namespace MiniatureGolf.Services
 
                     var gameGuidsToLoad = db.Games
                         .Where(a => (status == null || a.StateId == (int)status)
-                            && a.CreationTime >= compareDate
+                            && (a.StartTime >= compareDate || a.CreationTime >= compareDate)
                             && gamesToFilterByInternalId.Contains(a.Id) == false)
                         .Select(a => a.GUID)
                         .ToList();
@@ -233,7 +264,8 @@ namespace MiniatureGolf.Services
             }
         }
 
-        private void SaveAutoSaveActivatedGames()
+        #region Worker Methods
+        private void AutoSaveActivatedGames()
         {
             lock (this.Games)
             {
@@ -245,6 +277,65 @@ namespace MiniatureGolf.Services
                 }
             }
         }
+
+        /// <summary>
+        /// Deletes games with status "Created" and "Configuring" which are older than specified (in appSettings) from the database and cache.
+        /// </summary>
+        private void ClearUnstartedGames()
+        {
+            lock (this.Games)
+            {
+                var compareDate = DateTime.UtcNow.AddHours(this.appSettings.WorkerSettings.UnstartedGamesCleanerSettings.IdleTimeInHours * -1);
+                var gamesCurrentlyActive = this.Games.Where(a => (a.Value.MostRecentIsActivelyUsedHeartbeatTime ?? DateTime.MinValue) >= compareDate).Select(a => a.Value.Game.GUID).ToList();
+
+                // clear from db
+                using (var db = this.services.GetService<MiniatureGolfContext>())
+                {
+                    var gamesToDelete = db.Games
+                        .Where(a => (a.StateId == (int)Gamestatus.Created || a.StateId == (int)Gamestatus.Configuring)
+                            && a.CreationTime < compareDate
+                            && !(gamesCurrentlyActive.Contains(a.GUID)))
+                        .AsEnumerable();
+
+                    if (gamesToDelete.Any())
+                    {
+                        db.Games.RemoveRange(gamesToDelete);
+
+                        db.SaveChanges();
+                    }
+                }
+
+                // clear from cache
+                var gamesToRemoveFromCache = this.Games
+                        .Where(a => (a.Value.Game.StateId == (int)Gamestatus.Created || a.Value.Game.StateId == (int)Gamestatus.Configuring)
+                            && a.Value.Game.CreationTime < compareDate
+                            && !(gamesCurrentlyActive.Contains(a.Value.Game.GUID)))
+                        .AsEnumerable();
+
+                foreach (var gameToRemoveFromCache in gamesToRemoveFromCache.ToList())
+                {
+                    this.Games.Remove(gameToRemoveFromCache.Value.Game.GUID);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Remove games, which arent actively used from the cache.
+        /// </summary>
+        private void ClearIdleGamesFromCache()
+        {
+            lock (this.Games)
+            {
+                var compareDate = DateTime.UtcNow.AddMinutes(this.appSettings.WorkerSettings.IdleGamesCacheCleanerSettings.IdleTimeInMinutes * -1);
+                var gamesIdleForGivenTime = this.Games.Where(a => (a.Value.MostRecentIsActivelyUsedHeartbeatTime ?? DateTime.MinValue) < compareDate).Select(a => a.Value.Game.GUID).ToList();
+
+                foreach (var gameToRemoveFromCache in gamesIdleForGivenTime)
+                {
+                    this.Games.Remove(gameToRemoveFromCache);
+                }
+            }
+        }
+        #endregion Worker Methods
         #endregion Games 
 
         #region Courses
@@ -262,7 +353,7 @@ namespace MiniatureGolf.Services
 
                     gs.Game.Courses = gs.Game.Courses.ToList(); // hack!, damit eine Property-Änderung erkannt wird
 
-                    return true; 
+                    return true;
                 }
             }
             else
@@ -287,7 +378,7 @@ namespace MiniatureGolf.Services
                         gs.Game.Courses = gs.Game.Courses.ToList(); // hack!, damit eine Property-Änderung erkannt wird
                     }
 
-                    return true; 
+                    return true;
                 }
             }
             else
@@ -335,7 +426,7 @@ namespace MiniatureGolf.Services
                         t2.TeamPlayers.Add(tp2);
                     }
 
-                    return true; 
+                    return true;
                 }
             }
             else
@@ -368,7 +459,7 @@ namespace MiniatureGolf.Services
                         this.RemoveEmptyTeams(gameId);
                     }
 
-                    return true; 
+                    return true;
                 }
             }
             else
@@ -413,7 +504,7 @@ namespace MiniatureGolf.Services
                         gs.Game.Teams.Add(t);
                     }
 
-                    return true; 
+                    return true;
                 }
             }
 
@@ -434,7 +525,7 @@ namespace MiniatureGolf.Services
                         gs.Game.Teams.Remove(ttr);
 
                         gs.GameDbContext.Teams.Remove(ttr);
-                    } 
+                    }
                 }
             }
         }
