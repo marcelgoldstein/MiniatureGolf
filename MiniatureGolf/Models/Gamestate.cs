@@ -32,6 +32,7 @@ namespace MiniatureGolf.Models
         public string PlayersText => $"{this.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count():#00}:    {string.Join(", ", this.GetPreparedPlayersForGame(this))}";
         public string Time => this.GetTimeText();
         public bool IsAutoSaveActive { get; set; }
+        public DateTime? MostRecentIsActivelyUsedHeartbeatTime { get; set; } // wird regelmäßig aktualisiert, wenn das game im GameScoreboard geöffnet ist
         #endregion Properties
 
         #region Events
