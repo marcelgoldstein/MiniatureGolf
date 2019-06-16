@@ -185,6 +185,7 @@ namespace MiniatureGolf.Services
                     this.Games.Remove(gs.Game.GUID);
                     gs.GameDbContext.Games.Remove(gs.Game);
                     gs.GameDbContext.SaveChanges();
+                    gs.GameDbContext.Dispose();
                 }
             }
         }
@@ -315,6 +316,7 @@ namespace MiniatureGolf.Services
                 foreach (var gameToRemoveFromCache in gamesToRemoveFromCache.ToList())
                 {
                     this.Games.Remove(gameToRemoveFromCache.Value.Game.GUID);
+                    gameToRemoveFromCache.Value.GameDbContext.Dispose();
                 }
             }
         }
@@ -327,11 +329,12 @@ namespace MiniatureGolf.Services
             lock (this.Games)
             {
                 var compareDate = DateTime.UtcNow.AddMinutes(this.appSettings.WorkerSettings.IdleGamesCacheCleanerSettings.IdleTimeInMinutes * -1);
-                var gamesIdleForGivenTime = this.Games.Where(a => (a.Value.MostRecentIsActivelyUsedHeartbeatTime ?? DateTime.MinValue) < compareDate).Select(a => a.Value.Game.GUID).ToList();
+                var gamesIdleForGivenTime = this.Games.Where(a => (a.Value.MostRecentIsActivelyUsedHeartbeatTime ?? DateTime.MinValue) < compareDate).Select(a => a.Value).ToList();
 
                 foreach (var gameToRemoveFromCache in gamesIdleForGivenTime)
                 {
-                    this.Games.Remove(gameToRemoveFromCache);
+                    this.Games.Remove(gameToRemoveFromCache.Game.GUID);
+                    gameToRemoveFromCache.GameDbContext.Dispose();
                 }
             }
         }
