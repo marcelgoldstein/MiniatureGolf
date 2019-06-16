@@ -5,8 +5,8 @@
   white-space: nowrap;
   padding-right: 20px; }
 
-.c-numberInputField {
-  width: 70px; }
+span.c-rowElement div.k-widget.k-numerictextbox {
+  width: 70px !important; }
 
 .c-alignCenter {
   text-align: center; }

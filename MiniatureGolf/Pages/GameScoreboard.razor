@@ -33,24 +33,24 @@
             {
                 if (this.Gamestate.Status == Gamestatus.Created || this.Gamestate.Status == Gamestatus.Configuring || this.Gamestate.Status == Gamestatus.Finished)
                 {
-                    <button type="button" class="btn btn-primary" disabled="@(!(this.Gamestate.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count() > 0 || this.Gamestate.Game.Courses.Count > 0))" onclick="@(this.CreateNewGame)">new game</button>
+                    <button type="button" class="btn btn-primary" disabled="@(!(this.Gamestate.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count() > 0 || this.Gamestate.Game.Courses.Count > 0))" @onclick="@(this.CreateNewGame)">new game</button>
                 }
 
                 if (this.Gamestate.Status == Gamestatus.Configuring)
                 {
-                    <button type="button" class="btn btn-success" disabled="@(!(this.Gamestate.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count() > 0 && this.Gamestate.Game.Courses.Count > 0))" onclick="@(this.StartGame)">start game</button>
+                    <button type="button" class="btn btn-success" disabled="@(!(this.Gamestate.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count() > 0 && this.Gamestate.Game.Courses.Count > 0))" @onclick="@(this.StartGame)">start game</button>
                 }
 
                 if (this.Gamestate.Status == Gamestatus.Running)
                 {
-                    <button type="button" class="btn btn-warning" onclick="@(this.FinishGame)">finish game</button>
+                    <button type="button" class="btn btn-warning" @onclick="@(this.FinishGame)">finish game</button>
                 }
             }
 
             @if (this.Gamestate.Game.Teams.Count(a => a.TeamPlayers.Select(a => a.Player).Any()) > 2)
             {
                 <TelerikDropDownList Data="@this.Gamestate?.Game?.Teams?.Where(a => a.TeamPlayers?.Select(a => a.Player).Count() > 0).ToList()"
-                                     bind-value="@this.SelectedTeamNumber"
+                                     @bind-value="@this.SelectedTeamNumber"
                                      ValueField="@nameof(Team.Number)"
                                      TextField="@nameof(Team.Name)"
                                      TItem="@Team" TValue="@int"
@@ -62,7 +62,7 @@
             @if (this.CurrentUserMode == UserMode.Editor)
             {
                 <TelerikDropDownList Data="@this.ShareModes" 
-                                     bind-value="@this.SelectedShareMode" 
+                                     @bind-value="@this.SelectedShareMode" 
                                      ValueField="@nameof(UserModeDropDownItem.ModeId)" 
                                      TextField="@nameof(UserModeDropDownItem.Name)"
                                      TItem="@UserModeDropDownItem" TValue="@int"
@@ -78,26 +78,14 @@
         <div>
             <span class="c-rowElement">
                 <TelerikButton Class="c-increaseButton" OnClick="@this.RemovePlayer" Enabled="@(this.Gamestate.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count() > 0)">-</TelerikButton>
-                <TelerikTextBox Label="Player" bind-value="@PlayerNameToAdd" />
+                <TelerikTextBox Label="Player" @bind-value="@PlayerNameToAdd" />
                 <TelerikButton Class="c-increaseButton" OnClick="@this.AddPlayer">+</TelerikButton>
                 <TelerikButton Icon="myspace" OnClick="@this.CreateNewTeam">new team</TelerikButton>
             </span>
 
             <span class="c-rowElement">
                 <TelerikButton Class="c-increaseButton" OnClick="@this.RemoveCourse" Enabled="@(this.Gamestate.Game.Courses.Count > 0)">-</TelerikButton>
-                <span class="k-widget k-numerictextbox c-numberInputField">
-                    <span class="k-numeric-wrap">
-                        <input class="k-input k-formatted-value" bind="@this.CourseParNumberToAdd" title="Par" disabled />
-                        <span class="k-select">
-                            <span class="k-link k-link-increase" aria-label="Increase value" title="Increase value" onclick="@(() => { if (this.CourseParNumberToAdd < 7) this.CourseParNumberToAdd++; })">
-                                <span class="k-icon k-i-arrow-n"></span>
-                            </span>
-                            <span class="k-link k-link-decrease" aria-label="Decrease value" title="Decrease value" onclick="@(() => { if (this.CourseParNumberToAdd > 1) this.CourseParNumberToAdd--; })">
-                                <span class="k-icon k-i-arrow-s"></span>
-                            </span>
-                        </span>
-                    </span>
-                </span>
+                <TelerikNumericTextBox @bind-Value=@this.CourseParNumberToAdd Min="1" Max="7" Class="c-numberInputField"></TelerikNumericTextBox>
                 <TelerikButton Class="c-increaseButton" OnClick="@this.AddCourse">+</TelerikButton>
             </span>
         </div>
@@ -130,7 +118,7 @@
                         {
                             if (this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Running)
                             {
-                                <div onclick="@(() => { this.SelectedTeam.CurrentCourseNumber = (this.SelectedTeam.CurrentCourseNumber == c.Number ? null : (int?)c.Number); this.Gamestate.RaiseStateChanged(this, new StateChangedContext { Key = Context_CurrentCourse });})" class="c-clickableCell">
+                                <div @onclick="@(() => { this.SelectedTeam.CurrentCourseNumber = (this.SelectedTeam.CurrentCourseNumber == c.Number ? null : (int?)c.Number); this.Gamestate.RaiseStateChanged(this, new StateChangedContext { Key = Context_CurrentCourse });})" class="c-clickableCell">
                                     @if (c.Number == this.SelectedTeam.CurrentCourseNumber)
                                     {
                                         <span class="oi oi-aperture c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" style="color: darkred;"></span>
@@ -178,7 +166,7 @@
                         {
                             if (this.CurrentUserMode == UserMode.Editor && (this.Gamestate.Status == Gamestatus.Configuring || this.Gamestate.Status == Gamestatus.Running))
                             {
-                                <div class="c-alignCenter c-clickableCell c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" onclick="@(() => this.IncreasePar(context as Course))">@((context as Course).Par)</div>
+                                <div class="c-alignCenter c-clickableCell c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" @onclick="@(() => this.IncreasePar(context as Course))">@((context as Course).Par)</div>
                             }
                             else
                             {
@@ -201,7 +189,7 @@
                             {
                                 if (this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Running)
                                 {
-                                    <div class="c-alignCenter c-clickableCell c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" onclick="@(() => this.IncreaseHitCount(context as Course, player))">
+                                    <div class="c-alignCenter c-clickableCell c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" @onclick="@(() => this.IncreaseHitCount(context as Course, player))">
                                         <div class="c-ratingColorize" data-hitDiffToPar="@((c.PlayerCourseHits.SingleOrDefault(a => a.Player == player)?.HitCount ?? 0) - c.Par)">
                                             <div class="c-alignCenter">@((c.PlayerCourseHits.SingleOrDefault(a => a.Player == player)?.HitCount))</div>
                                         </div>
