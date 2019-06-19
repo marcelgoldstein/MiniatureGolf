@@ -232,9 +232,18 @@ namespace MiniatureGolf.Pages
             this.Invoke(this.StateHasChanged);
         }
 
-        private void CreateSampleGame()
+        private void CreateSampleGame(int recursiveCounter = 0)
         {
             this.CreateNewGame();
+
+            if (this.Gamestate == null)
+            {
+                if (recursiveCounter <= 10)
+                {
+                    this.CreateSampleGame(++recursiveCounter);
+                    return;
+                }
+            }
 
             this.CourseParNumberToAdd = 4;
             this.AddCourse();
