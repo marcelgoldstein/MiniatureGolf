@@ -160,20 +160,23 @@ namespace MiniatureGolf.Services
 
         public string CreateNewGame()
         {
-            var db = this.services.GetService<MiniatureGolfContext>();
-            var gs = new Gamestate();
-            gs.GameDbContext = db;
+            lock (this.Games)
+            {
+                var db = this.services.GetService<MiniatureGolfContext>();
+                var gs = new Gamestate();
+                gs.GameDbContext = db;
 
-            var g = new Game();
-            g.GUID = Guid.NewGuid().ToString();
-            g.CreationTime = DateTime.UtcNow;
-            g.Teams.Add(new Team { IsDefaultTeam = true, Number = 0, Name = "all" });
-            gs.Game = g;
-            db.Games.Add(g);
+                var g = new Game();
+                g.GUID = Guid.NewGuid().ToString();
+                g.CreationTime = DateTime.UtcNow;
+                g.Teams.Add(new Team { IsDefaultTeam = true, Number = 0, Name = "all" });
+                gs.Game = g;
+                db.Games.Add(g);
 
-            this.Games.Add(gs.Game.GUID, gs);
+                this.Games.Add(gs.Game.GUID, gs);
 
-            return gs.Game.GUID;
+                return gs.Game.GUID; 
+            }
         }
 
         public void DeleteGame(string gameId)
