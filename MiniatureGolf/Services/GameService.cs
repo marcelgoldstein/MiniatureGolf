@@ -250,6 +250,45 @@ namespace MiniatureGolf.Services
             }
         }
 
+        public List<LightweightGamestate> GetGamesLightweight(Gamestatus? status, DateFilter dateFilter)
+        {
+            var games = new List<LightweightGamestate>();
+
+            var compareDate = dateFilter switch
+            {
+                DateFilter.Day => DateTime.Today.Date,
+                DateFilter.Week => DateTime.Today.AddDays(-((7 + (int)DateTime.Today.DayOfWeek - (int)DayOfWeek.Monday) % 7)),
+                DateFilter.Month => new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1),
+                DateFilter.Quarter => new DateTime(DateTime.Today.Year, (((((DateTime.Today.Month - 1) / 3) + 1) - 1) * 3) + 1, 1),
+                DateFilter.Year => new DateTime(DateTime.Today.Year, 1, 1),
+                _ => throw new NotImplementedException(),
+            };
+            compareDate = compareDate.ToUniversalTime();
+
+            using (var db = this.services.GetService<MiniatureGolfContext>())
+            {
+                var gamesFromDatabase = db.Games
+                    .Include(a => a.Courses)
+                        .ThenInclude(a => a.PlayerCourseHits)
+                    .Include(a => a.Teams)
+                        .ThenInclude(a => a.TeamPlayers)
+                            .ThenInclude(a => a.Player)
+                    .Where(a => (status == null || a.StateId == (int)status)
+                        && (a.StartTime >= compareDate || a.CreationTime >= compareDate))
+                    .ToList();
+
+                foreach (var gameFromDatabase in gamesFromDatabase)
+                {
+                    var gs = new LightweightGamestate();
+                    gs.Game = gameFromDatabase;
+
+                    games.Add(gs);
+                }
+
+                return games;
+            }
+        }
+
         public void SaveToDatabase(Gamestate gs)
         {
             gs.GameDbContext.SaveChanges();

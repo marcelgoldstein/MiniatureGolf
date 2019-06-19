@@ -15,7 +15,7 @@ namespace MiniatureGolf.Pages
         #region Properties
         [Inject] public GameService GameService { get; private set; }
 
-        public List<Gamestate> CurrentGames { get; set; } = new List<Gamestate>();
+        public List<LightweightGamestate> CurrentGames { get; set; } = new List<LightweightGamestate>();
 
         public List<FilterState> FilterStates { get; set; } = new List<FilterState>();
 
@@ -35,7 +35,7 @@ namespace MiniatureGolf.Pages
         #region ctor
         public GamesListModel()
         {
-            this.IsGridBusyIndicatorHelper = new RedundantExecutionSuppressor(async (t) => 
+            this.IsGridBusyIndicatorHelper = new RedundantExecutionSuppressor(async (t) =>
             {
                 await this.LoadGamesInternalAsync(t);
             }, TimeSpan.FromSeconds(0.2));
@@ -61,7 +61,7 @@ namespace MiniatureGolf.Pages
         {
             this.IsGridBusyIndicatorVisible = true;
             this.IsGridBusyIndicatorOpactyAnimationTrigger = true;
-            this.CurrentGames = new List<Gamestate>();
+            this.CurrentGames = new List<LightweightGamestate>();
             await this.Invoke(this.StateHasChanged);
 
             var state = (this.SelectedFilterStateId == -1 ? (Gamestatus?)null : (Gamestatus?)this.SelectedFilterStateId);
@@ -71,7 +71,7 @@ namespace MiniatureGolf.Pages
             await Task.Run(() =>
             {
                 var games = this.GameService
-                    .GetGames(state, dateFilter)
+                    .GetGamesLightweight(state, dateFilter)
                         .Where(a => string.IsNullOrWhiteSpace(playerFilterInput) || a.PlayersText.ToLower().Contains(playerFilterInput))
                         .OrderBy(a => a.Game.CreationTime)
                         .ThenBy(a => a.Game.FinishTime)
@@ -99,20 +99,17 @@ namespace MiniatureGolf.Pages
             }
         }
 
-        protected string GetButtonClassForState(Gamestate gs)
+        protected string GetButtonClassForState(LightweightGamestate gs)
         {
-            switch ((Gamestatus)gs.Game.StateId)
+            return gs.Status switch
             {
-                case Gamestatus.Created:
-                case Gamestatus.Configuring:
-                    return "btn-primary";
-                case Gamestatus.Running:
-                    return "btn-success";
-                case Gamestatus.Finished:
-                    return "btn-warning";
-                default:
-                    return string.Empty;
-            }
+                var s when 
+                    s == Gamestatus.Created || 
+                    s == Gamestatus.Configuring => "btn-primary",
+                Gamestatus.Running => "btn-success",
+                Gamestatus.Finished => "btn-warning",
+                _ => string.Empty,
+            };
         }
         #endregion Methods
     }
