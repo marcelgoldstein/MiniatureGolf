@@ -9,11 +9,11 @@
 
 <div style="position: relative;">
     <div class="c-flexContainer">
-        <TelerikButton Class="c-flexItem c-flexItemFirst" @OnClick="@(() => { this.SelectedDateFilter = DateFilter.Day; this.LoadGames(); })">day</TelerikButton>
-        <TelerikButton Class="c-flexItem" @OnClick="@(() => { this.SelectedDateFilter = DateFilter.Week; this.LoadGames(); })">week</TelerikButton>
-        <TelerikButton Class="c-flexItem" @OnClick="@(() => { this.SelectedDateFilter = DateFilter.Month; this.LoadGames(); })">month</TelerikButton>
-        <TelerikButton Class="c-flexItem" @OnClick="@(() => { this.SelectedDateFilter = DateFilter.Quarter; this.LoadGames(); })">quarter</TelerikButton>
-        <TelerikButton Class="c-flexItem c-flexItemLast" @OnClick="@(() => { this.SelectedDateFilter = DateFilter.Year; this.LoadGames(); })">year</TelerikButton>
+        <TelerikButton Class="c-flexItem c-flexItemFirst" @OnClick="@(() => { this.SelectedDateFilter = DateFilter.Day; this.LoadGames(); })" Primary="@(this.SelectedDateFilter == DateFilter.Day ? true : false)">day</TelerikButton>
+        <TelerikButton Class="c-flexItem" @OnClick="@(() => { this.SelectedDateFilter = DateFilter.Week; this.LoadGames(); })" Primary="@(this.SelectedDateFilter == DateFilter.Week ? true : false)">week</TelerikButton>
+        <TelerikButton Class="c-flexItem" @OnClick="@(() => { this.SelectedDateFilter = DateFilter.Month; this.LoadGames(); })" Primary="@(this.SelectedDateFilter == DateFilter.Month ? true : false)">month</TelerikButton>
+        <TelerikButton Class="c-flexItem" @OnClick="@(() => { this.SelectedDateFilter = DateFilter.Quarter; this.LoadGames(); })" Primary="@(this.SelectedDateFilter == DateFilter.Quarter ? true : false)">quarter</TelerikButton>
+        <TelerikButton Class="c-flexItem c-flexItemLast" @OnClick="@(() => { this.SelectedDateFilter = DateFilter.Year; this.LoadGames(); })" Primary="@(this.SelectedDateFilter == DateFilter.Year ? true : false)">year</TelerikButton>
     </div>
 
     <div>
