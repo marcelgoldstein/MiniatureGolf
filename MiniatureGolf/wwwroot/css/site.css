@@ -109,10 +109,15 @@ app {
         display: block;
     }
 }*/
-/* this media query fixes a bug with the column/cell alignments when a telerikgrid is displayed on aan mobile device */
+/* this media query fixes a bug with the column/cell alignments when a telerikgrid is displayed on an mobile device */
 /* https://feedback.telerik.com/blazor/1411521-telerikgrid-columns-on-mobile-devices-wrong-aligned */
 @media (hover: none) and (pointer: coarse) {
   .k-grid-header {
-    padding-right: 0 !important; } }
+    padding-right: 0 !important; }
+  .fullViewHeightOnMobileDevice {
+    height: 100vh !important; }
+  div.main div.content.px-4 {
+    padding-left: 1px !important;
+    padding-right: 1px !important; } }
 
 /* media query from https://medium.com/@ferie/detect-a-touch-device-with-only-css-9f8e30fa1134 */
