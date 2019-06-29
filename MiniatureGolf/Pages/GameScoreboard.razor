@@ -106,8 +106,8 @@
     </div>
 </div>
 
-<div style="position: relative; margin-top: -10px; min-height: 167px; height: calc(100vh - @((this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Configuring) ? "250" : "193")px);">
-    <TelerikGrid Data=@this.Gamestate.Game.Courses Height="100%">
+<div class="fullViewHeightOnMobileDevice" style="position: relative; margin-top: -10px; min-height: 167px; height: calc(100vh - @((this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Configuring) ? "250" : "193")px);">
+    <TelerikGrid Data=@this.Gamestate.Game.Courses.OrderBy(a => a.Number) Height="100%">
         <TelerikGridColumns>
             @if (this.ShowColumns)
             {
