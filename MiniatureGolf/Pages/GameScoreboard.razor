@@ -75,20 +75,23 @@
 
     @if (this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Configuring)
     {
-        <div>
-            <span class="c-rowElement">
-                <TelerikButton Class="c-increaseButton" OnClick="@this.RemovePlayer" Enabled="@(this.Gamestate.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count() > 0)">-</TelerikButton>
-                <TelerikTextBox Label="Player" @bind-value="@PlayerNameToAdd" />
-                <TelerikButton Class="c-increaseButton" OnClick="@this.AddPlayer">+</TelerikButton>
-                <TelerikButton Icon="myspace" OnClick="@this.CreateNewTeam">new team</TelerikButton>
-            </span>
+    <div>
+        <span class="c-rowElement">
+            <TelerikNumericTextBox @bind-Value=@this.CourseHitLimit Min="7" Max="10"></TelerikNumericTextBox>
+        </span>
+        <span class="c-rowElement">
+            <TelerikButton Class="c-increaseButton" OnClick="@this.RemovePlayer" Enabled="@(this.Gamestate.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count() > 0)">-</TelerikButton>
+            <TelerikTextBox Label="Player" @bind-value="@PlayerNameToAdd" />
+            <TelerikButton Class="c-increaseButton" OnClick="@this.AddPlayer">+</TelerikButton>
+            <TelerikButton Icon="myspace" OnClick="@this.CreateNewTeam">new team</TelerikButton>
+        </span>
 
-            <span class="c-rowElement">
-                <TelerikButton Class="c-increaseButton" OnClick="@this.RemoveCourse" Enabled="@(this.Gamestate.Game.Courses.Count > 0)">-</TelerikButton>
-                <TelerikNumericTextBox @bind-Value=@this.CourseParNumberToAdd Min="1" Max="7" Class="c-numberInputField"></TelerikNumericTextBox>
-                <TelerikButton Class="c-increaseButton" OnClick="@this.AddCourse">+</TelerikButton>
-            </span>
-        </div>
+        <span class="c-rowElement">
+            <TelerikButton Class="c-increaseButton" OnClick="@this.RemoveCourse" Enabled="@(this.Gamestate.Game.Courses.Count > 0)">-</TelerikButton>
+            <TelerikNumericTextBox @bind-Value=@this.CourseParNumberToAdd Min="1" Max="@this.CourseHitLimit"></TelerikNumericTextBox>
+            <TelerikButton Class="c-increaseButton" OnClick="@this.AddCourse">+</TelerikButton>
+        </span>
+    </div>
     }
 
     <div class="c-flexContainerWithCenteredItem" style="margin-top: 10px;">

@@ -6,7 +6,7 @@
   padding-right: 20px; }
 
 span.c-rowElement div.k-widget.k-numerictextbox {
-  width: 70px !important; }
+  width: 77px !important; }
 
 .c-alignCenter {
   text-align: center; }
@@ -68,6 +68,15 @@ div.c-clickableCell {
 div.c-ratingColorize {
   transition: background-color 300ms ease-in-out; }
 
+div.c-ratingColorize[data-hitDiffToPar="-9"] {
+  background-color: rgba(0, 150, 0, 0.8); }
+
+div.c-ratingColorize[data-hitDiffToPar="-8"] {
+  background-color: rgba(0, 150, 0, 0.8); }
+
+div.c-ratingColorize[data-hitDiffToPar="-7"] {
+  background-color: rgba(0, 150, 0, 0.8); }
+
 div.c-ratingColorize[data-hitDiffToPar="-6"] {
   background-color: rgba(0, 150, 0, 0.8); }
 
@@ -105,6 +114,15 @@ div.c-ratingColorize[data-hitDiffToPar="5"] {
   background-color: rgba(150, 0, 0, 0.7); }
 
 div.c-ratingColorize[data-hitDiffToPar="6"] {
+  background-color: rgba(150, 0, 0, 0.8); }
+
+div.c-ratingColorize[data-hitDiffToPar="7"] {
+  background-color: rgba(150, 0, 0, 0.8); }
+
+div.c-ratingColorize[data-hitDiffToPar="8"] {
+  background-color: rgba(150, 0, 0, 0.8); }
+
+div.c-ratingColorize[data-hitDiffToPar="9"] {
   background-color: rgba(150, 0, 0, 0.8); }
 
 tbody tr.k-master-row td[role=gridcell] {

@@ -1,0 +1,1 @@
+﻿Add-Migration <nameOfMigrationToCreate> -project MiniatureGolf.DAL
