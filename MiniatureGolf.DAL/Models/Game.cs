@@ -12,6 +12,7 @@ namespace MiniatureGolf.DAL.Models
         public DateTime? CreationTime { get; set; }
         public DateTime? StartTime { get; set; }
         public DateTime? FinishTime { get; set; }
+        public int CourseHitLimit { get; set; } = 7;
 
         public int StateId { get; set; }
         public State State { get; set; }

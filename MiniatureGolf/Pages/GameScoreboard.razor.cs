@@ -53,6 +53,11 @@ namespace MiniatureGolf.Pages
         public Gamestate Gamestate { get; private set; }
 
         public string PlayerNameToAdd { get; set; }
+
+
+        private int courseHitLimit = 7;
+        public int CourseHitLimit { get => courseHitLimit; set { courseHitLimit = value; this.RecalibrateCoursePars(value); this.Gamestate.Game.CourseHitLimit = this.CourseHitLimit; } }
+
         public int CourseParNumberToAdd { get; set; } = 3;
 
         public List<Player> RankedPlayers { get; set; } = new List<Player>();
@@ -192,6 +197,7 @@ namespace MiniatureGolf.Pages
                 this.Gamestate.StateChanged -= this.Gamestate_StateChanged;
 
             this.Gamestate = gs;
+            this.CourseHitLimit = this.Gamestate.Game.CourseHitLimit;
             this.SelectedTeamNumber = 0;
 
             if (this.Gamestate != null)
@@ -503,14 +509,15 @@ namespace MiniatureGolf.Pages
             pch.HitCount = (pch.HitCount ?? 0) + step;
 
             // modulo 8, damit ein überrollen angewendet wird (8, da null/0 bis 7 gleich 8 elemente)
-            pch.HitCount %= 8;
+            // statt 7 in der formel gilt 'CourseHitLimit'
+            pch.HitCount %= (this.CourseHitLimit + 1);
             // dann 0 durch null ersetzen
             pch.HitCount = pch.HitCount == 0 ? null : pch.HitCount;
         }
 
         protected void IncreasePar(Course c)
         {
-            if (c.Par < 7)
+            if (c.Par < this.CourseHitLimit)
             {
                 c.Par++;
             }
@@ -542,6 +549,18 @@ namespace MiniatureGolf.Pages
             var emoji = this.autoRefreshEmojis[rnd.Next(0, this.autoRefreshEmojis.Count)];
 
             this.AutoRefreshEmoji = emoji;
+        }
+
+        protected void RecalibrateCoursePars(int upperLimit)
+        {
+            if (this.CourseParNumberToAdd > upperLimit)
+                this.CourseParNumberToAdd = upperLimit;
+
+            foreach (var course in this.Gamestate.Game.Courses)
+            {
+                if (course.Par > upperLimit)
+                    course.Par = upperLimit;
+            }
         }
 
         #region IDisposable Support
