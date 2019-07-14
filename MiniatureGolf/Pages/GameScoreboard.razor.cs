@@ -49,6 +49,7 @@ namespace MiniatureGolf.Pages
         [Parameter] protected string GameId { get; set; }
         [Parameter] protected string Mode { get; set; }
         [Parameter] protected string TeamNumber { get; set; }
+        [Parameter] protected string RankingMode { get; set; }
 
         public Gamestate Gamestate { get; private set; }
 
@@ -175,6 +176,9 @@ namespace MiniatureGolf.Pages
             });
 
             _ = this.StartMostRecentTouchUpdater(this.mostRecentTouchUpdaterTaskToken.Token);
+
+            if (this.RankingMode != null)
+                this.RankingDisplayMode = Enum.Parse<RankingDisplayMode>(this.RankingMode); 
 
             return base.OnParametersSetAsync();
         }
