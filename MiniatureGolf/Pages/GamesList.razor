@@ -37,7 +37,7 @@
                     <Template>
                         @if (context is LightweightGamestate gs)
                         {
-                            <a class="btn @(this.GetButtonClassForState(gs))" href="@($"/MiniatureGolf/{gs.Game.GUID}/{(int)UserMode.SpectatorReadOnly}/0")" role="button" style="width: 100%;">@(gs.StatusText)</a>
+                            <a class="btn @(this.GetButtonClassForState(gs))" href="@($"/MiniatureGolf/{gs.Game.GUID}/{(int)UserMode.SpectatorReadOnly}/0/{(int)this.RankingDisplayMode}")" role="button" style="width: 100%;">@(gs.StatusText)</a>
                         }
                     </Template>
                 </TelerikGridColumn>
