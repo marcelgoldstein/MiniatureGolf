@@ -30,6 +30,8 @@ namespace MiniatureGolf.Pages
         public bool IsGridBusyIndicatorVisible { get; set; }
         public bool IsGridBusyIndicatorOpactyAnimationTrigger { get; set; }
         protected RedundantExecutionSuppressor IsGridBusyIndicatorHelper { private set; get; }
+
+        protected RankingDisplayMode RankingDisplayMode { get; set; } = RankingDisplayMode.Average;
         #endregion Properties
 
         #region ctor
@@ -72,7 +74,7 @@ namespace MiniatureGolf.Pages
             {
                 var games = this.GameService
                     .GetGamesLightweight(state, dateFilter)
-                        .Where(a => string.IsNullOrWhiteSpace(playerFilterInput) || a.PlayersText.ToLower().Contains(playerFilterInput))
+                        .Where(a => string.IsNullOrWhiteSpace(playerFilterInput) || (this.RankingDisplayMode switch { RankingDisplayMode.Average => a.PlayersTextForAvgRanking, RankingDisplayMode.Sum => a.PlayersTextForSumRanking, _ => throw new NotImplementedException()}).ToLower().Contains(playerFilterInput))
                         .OrderBy(a => a.Game.CreationTime)
                         .ThenBy(a => a.Game.FinishTime)
                         .ToList();

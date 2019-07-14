@@ -87,6 +87,8 @@ namespace MiniatureGolf.Pages
         public bool ShowOuterViewEditOverlay { get; set; }
         public bool OuterViewEditOverlayAnimationTrigger { get; set; }
         protected RedundantExecutionSuppressor OuterViewEditOverlayHelper { private set; get; }
+
+        protected RankingDisplayMode RankingDisplayMode { get; set; } = RankingDisplayMode.Average;
         #endregion Properties
 
         #region ctor
@@ -381,17 +383,23 @@ namespace MiniatureGolf.Pages
                 this.SelectedTeamNumber = 0;
             }
 
-            if (this.Gamestate.Game.StateId >= (int)Gamestatus.Running)
+            var players = this.SelectedTeam.TeamPlayers.Select(a => a.Player);
+
+            if (this.Gamestate.Status >= Gamestatus.Running)
             {
-                this.RankedPlayers = this.SelectedTeam.TeamPlayers.Select(a => a.Player)
-                    .OrderByDescending(a => a.PlayerCourseHits.Count(b => b.HitCount != null)) // absteigend nach anzahl gespielter kurse
-                    .ThenBy(a => a.PlayerCourseHits.Sum(b => b.HitCount ?? 0)) // aufsteigend nach summe der benötigten schläge
-                    .ToList();
+                players = this.Gamestate.Status switch
+                {
+                    Gamestatus.Running => players
+                        .OrderBy(a => a.AverageHitCount ?? double.MaxValue) // aufsteigend nach dem durchschnitt der gebrauchten schläge
+                        .ThenByDescending(a => a.PlayerCourseHits.Count(b => b.HitCount != null)), // absteigend nach anzahl gespielter kurse
+                    Gamestatus.Finished => players
+                        .OrderByDescending(a => a.PlayerCourseHits.Count(b => b.HitCount != null)) // absteigend nach anzahl gespielter kurse
+                        .ThenBy(a => a.AverageHitCount ?? double.MaxValue), // aufsteigend nach dem durchschnitt der gebrauchten schläge
+                    _ => throw new NotImplementedException()
+                };
             }
-            else
-            {
-                this.RankedPlayers = this.SelectedTeam.TeamPlayers.Select(a => a.Player).ToList();
-            }
+
+            this.RankedPlayers = players.ToList();
         }
 
         protected void CreateNewGame()
@@ -447,21 +455,6 @@ namespace MiniatureGolf.Pages
             }
 
             this.StateHasChanged();
-        }
-
-        protected void ToggleUserMode()
-        {
-            switch (this.CurrentUserMode)
-            {
-                case UserMode.Editor:
-                    this.ChangeUserMode(UserMode.Spectator);
-                    break;
-                case UserMode.Spectator:
-                    this.ChangeUserMode(UserMode.Editor);
-                    break;
-                default:
-                    throw new InvalidOperationException("Invalid Source-UserMode for toggling!");
-            }
         }
 
         private void OnSelectedTeamNumberChanged()

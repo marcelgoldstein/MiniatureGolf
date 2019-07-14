@@ -13,19 +13,33 @@ namespace MiniatureGolf.Models
         public Game Game { get; set; }
         public Gamestatus Status { get { return (Gamestatus)this.Game.StateId; } set { this.Game.StateId = (int)value; } }
         public string StatusText => Enum.GetName(typeof(Gamestatus), this.Game.StateId).ToLower();
-        public string PlayersText => $"{this.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count():#00}:    {string.Join(", ", this.GetPreparedPlayersForGame(this))}";
+        public string PlayersTextForAvgRanking => $"{this.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count():#00}:    {string.Join(", ", this.GetPreparedPlayersForGame(this, RankingDisplayMode.Average))}";
+        public string PlayersTextForSumRanking => $"{this.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count():#00}:    {string.Join(", ", this.GetPreparedPlayersForGame(this, RankingDisplayMode.Sum))}";
         public string Time => this.GetTimeText();
         #endregion Properties
 
         #region Methods
-        private List<string> GetPreparedPlayersForGame(LightweightGamestate gs)
+        private IEnumerable<string> GetPreparedPlayersForGame(LightweightGamestate gs, RankingDisplayMode rankingDisplayMode)
         {
-            var players = gs.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player)
-                    .OrderByDescending(a => a.PlayerCourseHits.Count(b => b.HitCount != null)) // absteigend nach anzahl gespielter kurse
-                    .ThenBy(a => a.PlayerCourseHits.Sum(b => b.HitCount ?? 0)) // aufsteigend nach summe der benötigten schläge
-                    .ToList();
+            var players = gs.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player);
 
-            var playerStrings = players.Select(a => $"{a.Name} ({a.PlayerCourseHits.Sum(b => b.HitCount ?? 0)})").ToList();
+            players = this.Status switch
+            {
+                Gamestatus.Running => players
+                    .OrderBy(a => a.AverageHitCount ?? double.MaxValue) // aufsteigend nach dem durchschnitt der gebrauchten schläge
+                    .ThenByDescending(a => a.PlayerCourseHits.Count(b => b.HitCount != null)), // absteigend nach anzahl gespielter kurse
+
+                _ => players
+                    .OrderByDescending(a => a.PlayerCourseHits.Count(b => b.HitCount != null)) // absteigend nach anzahl gespielter kurse
+                    .ThenBy(a => a.AverageHitCount ?? double.MaxValue), // aufsteigend nach dem durchschnitt der gebrauchten schläge
+            };
+
+            var playerStrings = rankingDisplayMode switch
+            {
+                RankingDisplayMode.Average => players.Select(a => a.NameForAvgRanking),
+                RankingDisplayMode.Sum => players.Select(a => a.NameForSumRanking),
+                _ => throw new NotImplementedException()
+            };
 
             return playerStrings;
         }

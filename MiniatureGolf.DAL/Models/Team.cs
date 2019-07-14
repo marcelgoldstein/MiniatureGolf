@@ -1,6 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MiniatureGolf.DAL.Models
 {
@@ -18,5 +18,17 @@ namespace MiniatureGolf.DAL.Models
 
         public int? CurrentCourseNumber { get; set; }
         public bool IsDefaultTeam { get; set; }
+
+        [NotMapped]
+        public double? AverageHitCount => this.TeamPlayers.Select(a => a.Player.AverageHitCount).Where(a => a != null).Average(a => a);
+
+        [NotMapped]
+        public double? AverageOfPlayerSumHitCount => this.TeamPlayers.Select(a => a.Player.SumHitCount).Where(a => a != 0).Average(a => a);
+
+        [NotMapped]
+        public string NameForAvgRanking => (this.AverageHitCount != null ? $"{this.Name} ({this.AverageHitCount:N2})" : $"{this.Name}");
+
+        [NotMapped]
+        public string NameForAvgOfPlayerSumRanking => (this.AverageOfPlayerSumHitCount != null ? $"{this.Name} ({this.AverageOfPlayerSumHitCount:N2})" : $"{this.Name}");
     }
 }
