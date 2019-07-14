@@ -1,8 +1,5 @@
 ﻿using MiniatureGolf.DAL;
-using MiniatureGolf.DAL.Models;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace MiniatureGolf.Models
 {

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace MiniatureGolf.Models
+﻿namespace MiniatureGolf.Models
 {
     public enum Gamestatus
     {
@@ -18,5 +13,11 @@ namespace MiniatureGolf.Models
         Editor = 0,
         Spectator = 1,
         SpectatorReadOnly = 2,
+    }
+
+    public enum RankingDisplayMode
+    {
+        Average,
+        Sum,
     }
 }

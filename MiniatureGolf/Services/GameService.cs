@@ -442,7 +442,7 @@ namespace MiniatureGolf.Services
                 {
                     if (string.IsNullOrWhiteSpace(name))
                     {
-                        name = $"Player {gs.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count() + 1:00}";
+                        name = $"P {gs.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count() + 1:00}";
                     }
 
                     var p = new Player() { Name = name };

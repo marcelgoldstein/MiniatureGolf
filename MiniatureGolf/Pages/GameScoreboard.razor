@@ -17,16 +17,14 @@
         <span class="c-flexHorizontalContainer">
             @if (this.CurrentUserMode == UserMode.Editor || this.CurrentUserMode == UserMode.Spectator)
             {
-                <TelerikButton OnClick="@(this.ToggleUserMode)">
-                    @if (this.CurrentUserMode == UserMode.Editor)
-                    {
-                        <span><strong>editor</strong> / spectator</span>
-                    }
-                    else if (this.CurrentUserMode == UserMode.Spectator)
-                    {
-                        <span>editor / <strong>spectator</strong></span>
-                    }
-                </TelerikButton>
+                <span class="btn-group btn-group-toggle" data-toggle="buttons">
+                    <label class="btn btn-secondary @(this.CurrentUserMode == UserMode.Editor ? "active" : "")">
+                        <input type="radio" name="options" id="option1" autocomplete="off" @onclick="@(() => this.CurrentUserMode = UserMode.Editor)" /> editor
+                    </label>
+                    <label class="btn btn-secondary @(this.CurrentUserMode == UserMode.Spectator ? "active" : "")">
+                        <input type="radio" name="options" id="option2" autocomplete="off" @onclick="@(() => this.CurrentUserMode = UserMode.Spectator)" /> spectator
+                    </label>
+                </span>
             }
 
             @if (this.CurrentUserMode == UserMode.Editor)
@@ -47,22 +45,31 @@
                 }
             }
 
-            @if (this.Gamestate.Game.Teams.Count(a => a.TeamPlayers.Select(a => a.Player).Any()) > 2)
-            {
-                <TelerikDropDownList Data="@this.Gamestate?.Game?.Teams?.Where(a => a.TeamPlayers?.Select(a => a.Player).Count() > 0).ToList()"
-                                     @bind-value="@this.SelectedTeamNumber"
-                                     ValueField="@nameof(Team.Number)"
-                                     TextField="@nameof(Team.Name)"
-                                     TItem="@Team" TValue="@int"
-                                     Height="38px" Width="140px" PopupHeight="Auto" />
-            }
+            <TelerikDropDownList Data="@(this.Gamestate?.Game?.Teams?
+                    .Where(a => a.TeamPlayers?.Select(a => a.Player).Count() > 0)
+                    .OrderByDescending(a => a.IsDefaultTeam)
+                    .ThenBy(a => a.AverageHitCount))"
+                                 @bind-Value="@this.SelectedTeamNumber"
+                                 ValueField="@nameof(Team.Number)"
+                                 TextField="@(this.RankingDisplayMode switch { RankingDisplayMode.Average => nameof(Team.NameForAvgRanking), RankingDisplayMode.Sum => nameof(Team.NameForAvgOfPlayerSumRanking), _ => throw new NotImplementedException()})"
+                                 TItem="@Team" TValue="@int"
+                                 Height="38px" Width="180px" PopupHeight="Auto" />
+
+            <span class="btn-group btn-group-toggle" data-toggle="buttons">
+                <label class="btn btn-info @(this.RankingDisplayMode == RankingDisplayMode.Average ? "active" : "")">
+                    <input type="radio" name="options" id="option1" autocomplete="off" @onclick="@(() => this.RankingDisplayMode = RankingDisplayMode.Average)" /> Average
+                </label>
+                <label class="btn btn-info @(this.RankingDisplayMode == RankingDisplayMode.Sum ? "active" : "")">
+                    <input type="radio" name="options" id="option2" autocomplete="off" @onclick="@(() => this.RankingDisplayMode = RankingDisplayMode.Sum)" /> Sum
+                </label>
+            </span>
         </span>
 
         <span class="c-flexHorizontalContainer c-flexHorizontalChildRight">
             @if (this.CurrentUserMode == UserMode.Editor)
             {
                 <TelerikDropDownList Data="@this.ShareModes" 
-                                     @bind-value="@this.SelectedShareMode" 
+                                     @bind-Value="@this.SelectedShareMode" 
                                      ValueField="@nameof(UserModeDropDownItem.ModeId)" 
                                      TextField="@nameof(UserModeDropDownItem.Name)"
                                      TItem="@UserModeDropDownItem" TValue="@int"
@@ -77,6 +84,7 @@
     {
     <div>
         <span class="c-rowElement">
+            <label>hit-limit:</label>
             <TelerikNumericTextBox @bind-Value=@this.CourseHitLimit Min="7" Max="10"></TelerikNumericTextBox>
         </span>
         <span class="c-rowElement">
@@ -87,6 +95,7 @@
         </span>
 
         <span class="c-rowElement">
+            <label>courses:</label>
             <TelerikButton Class="c-increaseButton" OnClick="@this.RemoveCourse" Enabled="@(this.Gamestate.Game.Courses.Count > 0)">-</TelerikButton>
             <TelerikNumericTextBox @bind-Value=@this.CourseParNumberToAdd Min="1" Max="@this.CourseHitLimit"></TelerikNumericTextBox>
             <TelerikButton Class="c-increaseButton" OnClick="@this.AddCourse">+</TelerikButton>
@@ -186,7 +195,7 @@
 
                 @foreach (var player in this.RankedPlayers)
                 {
-                    <TelerikGridColumn Title="@($"{player.Name} ({player.PlayerCourseHits.Sum(a => a.HitCount ?? 0)})")">
+                    <TelerikGridColumn Title="@(this.RankingDisplayMode switch { RankingDisplayMode.Average => player.NameForAvgRanking, RankingDisplayMode.Sum => player.NameForSumRanking, _ => throw new NotImplementedException()})">
                         <Template>
                             @if (context is Course c)
                             {
