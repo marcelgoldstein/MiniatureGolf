@@ -1,32 +1,24 @@
+@inherits NavMenuModel
+
 <div class="top-row pl-4 navbar navbar-dark">
     <a class="navbar-brand" href="">MiniatureGolf</a>
-    <button class="navbar-toggler" onclick="@ToggleNavMenu">
+    <a class="navbar-brand" href="@this.uriHelper.GetAbsoluteUri()">@this.CurrentPageName</a>
+    <button class="navbar-toggler" onclick="@this.ToggleNavMenu">
         <span class="navbar-toggler-icon"></span>
     </button>
 </div>
 
-<div class="@NavMenuCssClass" onclick="@ToggleNavMenu">
+<div class="@this.NavMenuCssClass" onclick="@this.ToggleNavMenu">
     <ul class="nav flex-column">
         <li class="nav-item px-3">
-            <NavLink class="nav-link" href="MiniatureGolf">
-                <span class="oi oi oi-flag" aria-hidden="true"></span> MiniatureGolf
+            <NavLink class="nav-link" href="@this.Pages[0].href">
+                <span class="oi oi oi-flag" aria-hidden="true"></span> @this.Pages[0].name
             </NavLink>
         </li>
         <li class="nav-item px-3">
-            <NavLink class="nav-link" href="GamesList">
-                <span class="oi oi oi-list" aria-hidden="true"></span> GamesList
+            <NavLink class="nav-link" href="@this.Pages[1].href">
+                <span class="oi oi oi-list" aria-hidden="true"></span> @this.Pages[1].name
             </NavLink>
         </li>
     </ul>
 </div>
-
-@functions {
-    bool collapseNavMenu = true;
-
-    string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
-
-    void ToggleNavMenu()
-    {
-        collapseNavMenu = !collapseNavMenu;
-    }
-}

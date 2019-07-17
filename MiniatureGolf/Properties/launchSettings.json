@@ -18,7 +18,6 @@
     "MiniatureGolf": {
       "commandName": "Project",
       "launchBrowser": true,
-      "launchUrl": "MiniatureGolf",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
