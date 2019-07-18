@@ -47,7 +47,7 @@
             <TelerikDropDownList Data="@(this.Gamestate?.Game?.Teams?
                     .Where(a => a.TeamPlayers?.Select(a => a.Player).Count() > 0)
                     .OrderByDescending(a => a.IsDefaultTeam)
-                    .ThenBy(a => a.AverageHitCount))"
+                    .ThenBy(a => a.AverageHitCount ?? double.MaxValue))"
                                  @bind-Value="@this.SelectedTeamNumber"
                                  ValueField="@nameof(Team.Number)"
                                  TextField="@(this.RankingDisplayMode switch { RankingDisplayMode.Average => nameof(Team.NameForAvgRanking), RankingDisplayMode.Sum => nameof(Team.NameForAvgOfPlayerSumRanking), _ => throw new NotImplementedException()})"
