@@ -8,6 +8,7 @@ namespace MiniatureGolf.Settings
     public class AppSettings
     {
         public WorkerSettings WorkerSettings { get; set; }
+        public SpecialDays SpecialDays { get; set; }
     }
     
     public class WorkerSettings
@@ -32,5 +33,11 @@ namespace MiniatureGolf.Settings
     {
         public int WorkerIntervallInMinutes { get; set; }
         public int IdleTimeInMinutes { get; set; }
+    }
+
+    public class SpecialDays
+    {
+        public string Dates { get; set; }
+        public string Headertext { get; set; }
     }
 }
