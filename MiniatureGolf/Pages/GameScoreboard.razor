@@ -1,17 +1,15 @@
 ﻿@page "/"
-@page "/MiniatureGolf"
-@page "/MiniatureGolf/{GameId}"
-@page "/MiniatureGolf/{GameId}/{Mode}"
-@page "/MiniatureGolf/{GameId}/{Mode}/{TeamNumber}"
-@page "/MiniatureGolf/{GameId}/{Mode}/{TeamNumber}/{RankingMode}"
+@page "/scoreboard"
+@page "/scoreboard/{GameId}"
+@page "/scoreboard/{GameId}/{Mode}"
+@page "/scoreboard/{GameId}/{Mode}/{TeamNumber}"
+@page "/scoreboard/{GameId}/{Mode}/{TeamNumber}/{RankingMode}"
 
 @using MiniatureGolf.Models
 @using MiniatureGolf.DAL.Models
 @using Telerik.Blazor;
 
 @inherits MiniatureGolf.Pages.GameScoreboardModel
-
-<h1>Scoreboard</h1>
 
 <div class="c-settingsBox">
     <div class="c-flexHorizontalContainer">
@@ -69,39 +67,38 @@
         <span class="c-flexHorizontalContainer c-flexHorizontalChildRight">
             @if (this.CurrentUserMode == UserMode.Editor)
             {
-                <TelerikDropDownList Data="@this.ShareModes" 
-                                     @bind-Value="@this.SelectedShareMode" 
-                                     ValueField="@nameof(UserModeDropDownItem.ModeId)" 
+                <TelerikDropDownList Data="@this.ShareModes"
+                                     @bind-Value="@this.SelectedShareMode"
+                                     ValueField="@nameof(UserModeDropDownItem.ModeId)"
                                      TextField="@nameof(UserModeDropDownItem.Name)"
                                      TItem="@UserModeDropDownItem" TValue="@int"
-                                     Height="38px" Width="160px" PopupHeight="Auto"
-                                     />
+                                     Height="38px" Width="160px" PopupHeight="Auto" />
             }
-            <a class="btn btn-light c-flexHorizontalChildRight" href="@($"/MiniatureGolf/{this.Gamestate.Game.GUID}/{(this.CurrentUserMode switch { UserMode.Editor => (int)this.SelectedShareMode, UserMode.Spectator => (int)UserMode.Spectator, UserMode.SpectatorReadOnly => (int)UserMode.SpectatorReadOnly, _ => (int)UserMode.SpectatorReadOnly })}/{this.SelectedTeamNumber}/{(int)this.RankingDisplayMode}")" role="button"><span class="oi oi-link-intact">  share</span></a>
+            <a class="btn btn-light c-flexHorizontalChildRight" href="@($"/scoreboard/{this.Gamestate.Game.GUID}/{(this.CurrentUserMode switch { UserMode.Editor => (int)this.SelectedShareMode, UserMode.Spectator => (int)UserMode.Spectator, UserMode.SpectatorReadOnly => (int)UserMode.SpectatorReadOnly, _ => (int)UserMode.SpectatorReadOnly })}/{this.SelectedTeamNumber}/{(int)this.RankingDisplayMode}")" role="button"><span class="oi oi-link-intact">  share</span></a>
         </span>
     </div>
 
     @if (this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Configuring)
     {
-    <div>
-        <span class="c-rowElement">
-            <label>hit-limit:</label>
-            <TelerikNumericTextBox @bind-Value=@this.CourseHitLimit Min="7" Max="10"></TelerikNumericTextBox>
-        </span>
-        <span class="c-rowElement">
-            <TelerikButton Class="c-increaseButton" OnClick="@this.RemovePlayer" Enabled="@(this.Gamestate.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count() > 0)">-</TelerikButton>
-            <TelerikTextBox Label="Player" @bind-value="@PlayerNameToAdd" />
-            <TelerikButton Class="c-increaseButton" OnClick="@this.AddPlayer">+</TelerikButton>
-            <TelerikButton Icon="myspace" OnClick="@this.CreateNewTeam">new team</TelerikButton>
-        </span>
+        <div>
+            <span class="c-rowElement">
+                <label>hit-limit:</label>
+                <TelerikNumericTextBox @bind-Value=@this.CourseHitLimit Min="7" Max="10"></TelerikNumericTextBox>
+            </span>
+            <span class="c-rowElement">
+                <TelerikButton Class="c-increaseButton" OnClick="@this.RemovePlayer" Enabled="@(this.Gamestate.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count() > 0)">-</TelerikButton>
+                <TelerikTextBox Label="Player" @bind-value="@PlayerNameToAdd" />
+                <TelerikButton Class="c-increaseButton" OnClick="@this.AddPlayer">+</TelerikButton>
+                <TelerikButton Icon="myspace" OnClick="@this.CreateNewTeam">new team</TelerikButton>
+            </span>
 
-        <span class="c-rowElement">
-            <label>courses:</label>
-            <TelerikButton Class="c-increaseButton" OnClick="@this.RemoveCourse" Enabled="@(this.Gamestate.Game.Courses.Count > 0)">-</TelerikButton>
-            <TelerikNumericTextBox @bind-Value=@this.CourseParNumberToAdd Min="1" Max="@this.CourseHitLimit"></TelerikNumericTextBox>
-            <TelerikButton Class="c-increaseButton" OnClick="@this.AddCourse">+</TelerikButton>
-        </span>
-    </div>
+            <span class="c-rowElement">
+                <label>courses:</label>
+                <TelerikButton Class="c-increaseButton" OnClick="@this.RemoveCourse" Enabled="@(this.Gamestate.Game.Courses.Count > 0)">-</TelerikButton>
+                <TelerikNumericTextBox @bind-Value=@this.CourseParNumberToAdd Min="1" Max="@this.CourseHitLimit"></TelerikNumericTextBox>
+                <TelerikButton Class="c-increaseButton" OnClick="@this.AddCourse">+</TelerikButton>
+            </span>
+        </div>
     }
 
     <div class="c-flexContainerWithCenteredItem" style="margin-top: 10px;">
@@ -119,7 +116,7 @@
     </div>
 </div>
 
-<div class="fullViewHeightOnMobileDevice" style="position: relative; margin-top: -10px; min-height: 167px; height: calc(100vh - @((this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Configuring) ? "250" : "193")px);">
+<div class="fullViewHeightOnMobileDevice" style="position: relative; margin-top: -10px; min-height: 167px; height: calc(100vh - @((this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Configuring) ? "200" : "143")px);">
     <TelerikGrid Data=@this.Gamestate.Game.Courses.OrderBy(a => a.Number) Height="100%">
         <TelerikGridColumns>
             @if (this.ShowColumns)
@@ -236,12 +233,12 @@
     }
 </div>
 
-<TelerikWindow Width="420px" Height="260px" Centered="true" Visible="@IsNotificationWindowVisible" Modal="true" >
+<TelerikWindow Width="420px" Height="260px" Centered="true" Visible="@IsNotificationWindowVisible" Modal="true">
     <TelerikWindowTitle>
         <strong>404 : game not found</strong>
     </TelerikWindowTitle>
     <TelerikWindowActions>
-        <TelerikWindowAction Name="Close" OnClick="@(() => { this.IsNotificationWindowVisible = false; })"/>
+        <TelerikWindowAction Name="Close" OnClick="@(() => { this.IsNotificationWindowVisible = false; })" />
     </TelerikWindowActions>
     <TelerikWindowContent>
         <div style="display: flex; flex-direction: column;">
