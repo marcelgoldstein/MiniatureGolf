@@ -23,10 +23,13 @@ app {
   background-color: #812832; }
 
 .sidebar .top-row {
-  background-color: rgba(0, 0, 0, 0.4); }
+  background-color: rgba(0, 0, 0, 0.4);
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important; }
 
 .sidebar .navbar-brand {
-  font-size: 1.1rem; }
+  font-size: 1.1rem;
+  margin-right: 5px; }
 
 .sidebar .oi {
   width: 2rem;
