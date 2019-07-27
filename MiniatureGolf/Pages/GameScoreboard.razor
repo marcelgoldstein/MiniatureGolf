@@ -104,7 +104,7 @@
     <div class="c-flexContainerWithCenteredItem" style="margin-top: 10px;">
         @if (this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Running)
         {
-            <TelerikAnimationContainer AnimationType="@AnimationType.PushDown" AnimationDuration="300" ShowDelay="100" Visible="@this.AutoRefreshHelper.IsRunning">
+            <TelerikAnimationContainer AnimationType="@AnimationType.SlideUp" AnimationDuration="300" ShowDelay="100" @ref="@this.AutoRefreshAnimationContainer" >
                 <span class="c-toastMessage">auto-refresh in </span>
                 <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.9 ? "c-opacityAnimationHidden" : "")" style="font-size: 1.4em;">@this.AutoRefreshEmoji</span>
                 <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.7 ? "c-opacityAnimationHidden" : "")" style="font-size: 1.3em;">@this.AutoRefreshEmoji</span>
