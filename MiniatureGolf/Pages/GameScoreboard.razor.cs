@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Telerik.Blazor.Components.AnimationContainer;
 
 namespace MiniatureGolf.Pages
 {
@@ -82,6 +83,7 @@ namespace MiniatureGolf.Pages
         /// Wird verwendet, um eine Verzögerung der Aktualisierung zu bewirken, wenn der Editierer Punkte geändert hat. 
         /// </summary>
         protected RedundantExecutionSuppressor AutoRefreshHelper { private set; get; }
+        protected TelerikAnimationContainer AutoRefreshAnimationContainer { get; set; }
 
         public string AutoRefreshEmoji { get; set; } = "😜";
 
@@ -90,12 +92,13 @@ namespace MiniatureGolf.Pages
         protected RedundantExecutionSuppressor OuterViewEditOverlayHelper { private set; get; }
 
         protected RankingDisplayMode RankingDisplayMode { get; set; } = RankingDisplayMode.Average;
+
         #endregion Properties
 
         #region ctor
         public GameScoreboardModel()
         {
-            this.AutoRefreshHelper = new RedundantExecutionSuppressor(async (t) => { this.RefreshPlayerRanking(); await this.Invoke(this.StateHasChanged); }, TimeSpan.FromSeconds(3));
+            this.AutoRefreshHelper = new RedundantExecutionSuppressor(async (t) => { this.RefreshPlayerRanking(); await this.AutoRefreshAnimationContainer.HideAsync(); await this.Invoke(this.StateHasChanged); }, TimeSpan.FromSeconds(3));
             this.AutoRefreshHelper.ProgressChanged += (sender, e) =>
             {
                 this.Invoke(this.StateHasChanged);
@@ -484,6 +487,7 @@ namespace MiniatureGolf.Pages
 
             this.RandoPickAutoRefreshEmoji();
             this.AutoRefreshHelper.Push();
+            this.AutoRefreshAnimationContainer.ShowAsync();
 
             if (this.Gamestate.Status == Gamestatus.Running)
                 this.SelectedTeam.CurrentCourseNumber = c.Number;
