@@ -104,7 +104,7 @@ public class GameScoreboardModel : ComponentBase, IDisposable
             if (disposedValue == false)
                 RefreshPlayerRanking();
 
-            if (disposedValue == false)
+            if (disposedValue == false && AutoRefreshAnimationContainer != null && CurrentUserMode == UserMode.Editor && Gamestate.Status == Gamestatus.Running)
                 await AutoRefreshAnimationContainer.HideAsync();
 
             if (disposedValue == false)
@@ -508,9 +508,11 @@ public class GameScoreboardModel : ComponentBase, IDisposable
         IncreaseHitCountInternal(c, p, step);
 
         RandoPickAutoRefreshEmoji();
-        AutoRefreshHelper.Push();
 
         if (disposedValue == false)
+            AutoRefreshHelper.Push();
+
+        if (disposedValue == false && AutoRefreshAnimationContainer != null && CurrentUserMode == UserMode.Editor && Gamestate.Status == Gamestatus.Running)
             _ = AutoRefreshAnimationContainer.ShowAsync();
 
         if (Gamestate.Status == Gamestatus.Running)
@@ -595,6 +597,7 @@ public class GameScoreboardModel : ComponentBase, IDisposable
         {
             if (disposing)
             {
+                AutoRefreshAnimationContainer = null;
                 mostRecentTouchUpdaterTaskToken.Cancel();
             }
 
