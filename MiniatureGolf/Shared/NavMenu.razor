@@ -2,13 +2,13 @@
 
 <div class="top-row pl-4 navbar navbar-dark">
     <a class="navbar-brand" href="">@(this.SpecialDaysHeadertext)MiniatureGolf</a>
-    <a class="navbar-brand" href="@this.uriHelper.GetAbsoluteUri()">@this.CurrentPageName</a>
-    <button class="navbar-toggler" onclick="@this.ToggleNavMenu">
+    <a class="navbar-brand" href="@this.NavigationManager.Uri">@this.CurrentPageName</a>
+    <button class="navbar-toggler" onclick="@(() => this.ToggleNavMenu())">
         <span class="navbar-toggler-icon"></span>
     </button>
 </div>
 
-<div class="@this.NavMenuCssClass" onclick="@this.ToggleNavMenu">
+<div class="@this.NavMenuCssClass" onclick="@(() => this.ToggleNavMenu())">
     <ul class="nav flex-column">
         <li class="nav-item px-3">
             <NavLink class="nav-link" href="@this.Pages[0].href">

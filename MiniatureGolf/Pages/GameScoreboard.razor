@@ -7,7 +7,8 @@
 
 @using MiniatureGolf.Models
 @using MiniatureGolf.DAL.Models
-@using Telerik.Blazor;
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
 
 @inherits MiniatureGolf.Pages.GameScoreboardModel
 
@@ -18,10 +19,10 @@
             {
                 <span class="btn-group btn-group-toggle" data-toggle="buttons">
                     <label class="btn btn-secondary @(this.CurrentUserMode == UserMode.Editor ? "active" : "")">
-                        <input type="radio" name="options" id="option1" autocomplete="off" @onclick="@(() => this.CurrentUserMode = UserMode.Editor)" /> editor
+                        <input type="radio" name="options" id="option1" autocomplete="off" onclick="@(() => SetCurrentUserMode(UserMode.Editor))" /> editor
                     </label>
                     <label class="btn btn-secondary @(this.CurrentUserMode == UserMode.Spectator ? "active" : "")">
-                        <input type="radio" name="options" id="option2" autocomplete="off" @onclick="@(() => this.CurrentUserMode = UserMode.Spectator)" /> spectator
+                        <input type="radio" name="options" id="option2" autocomplete="off" onclick="@(() => SetCurrentUserMode(UserMode.Spectator))" /> spectator
                     </label>
                 </span>
             }
@@ -30,36 +31,40 @@
             {
                 if (this.Gamestate.Status == Gamestatus.Created || this.Gamestate.Status == Gamestatus.Configuring || this.Gamestate.Status == Gamestatus.Finished)
                 {
-                    <button type="button" class="btn btn-primary" disabled="@(!(this.Gamestate.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count() > 0 || this.Gamestate.Game.Courses.Count > 0))" @onclick="@(this.CreateNewGame)">new game</button>
+                    <button type="button" class="btn btn-primary" disabled="@(!(this.Gamestate.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count() > 0 || this.Gamestate.Game.Courses.Count > 0))" onclick="@(() => this.CreateNewGame())">new game</button>
                 }
 
                 if (this.Gamestate.Status == Gamestatus.Configuring)
                 {
-                    <button type="button" class="btn btn-success" disabled="@(!(this.Gamestate.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count() > 0 && this.Gamestate.Game.Courses.Count > 0))" @onclick="@(this.StartGame)">start game</button>
+                    <button type="button" class="btn btn-success" disabled="@(!(this.Gamestate.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count() > 0 && this.Gamestate.Game.Courses.Count > 0))" onclick="@(() => this.StartGame())">start game</button>
                 }
 
                 if (this.Gamestate.Status == Gamestatus.Running)
                 {
-                    <button type="button" class="btn btn-warning" @onclick="@(this.FinishGame)">finish game</button>
+                    <button type="button" class="btn btn-warning" onclick="@(() => this.FinishGame())">finish game</button>
                 }
             }
 
             <TelerikDropDownList Data="@(this.Gamestate?.Game?.Teams?
-                    .Where(a => a.TeamPlayers?.Select(a => a.Player).Count() > 0)
-                    .OrderByDescending(a => a.IsDefaultTeam)
-                    .ThenBy(a => a.AverageHitCount ?? double.MaxValue))"
+                .Where(a => a.TeamPlayers?.Select(a => a.Player).Count() > 0)
+                .OrderByDescending(a => a.IsDefaultTeam)
+                .ThenBy(a => a.AverageHitCount ?? double.MaxValue))"
                                  @bind-Value="@this.SelectedTeamNumber"
                                  ValueField="@nameof(Team.Number)"
                                  TextField="@(this.RankingDisplayMode switch { RankingDisplayMode.Average => nameof(Team.NameForAvgRanking), RankingDisplayMode.Sum => nameof(Team.NameForAvgOfPlayerSumRanking), _ => throw new NotImplementedException()})"
                                  TItem="@Team" TValue="@int"
-                                 Height="38px" Width="180px" PopupHeight="Auto" />
+                                 Width="300px">
+                <DropDownListSettings>
+                    <DropDownListPopupSettings Height="auto" />
+                </DropDownListSettings>
+            </TelerikDropDownList>
 
             <span class="btn-group btn-group-toggle" data-toggle="buttons">
                 <label class="btn btn-info @(this.RankingDisplayMode == RankingDisplayMode.Average ? "active" : "")">
-                    <input type="radio" name="options" id="option1" autocomplete="off" @onclick="@(() => this.RankingDisplayMode = RankingDisplayMode.Average)" /> Average
+                    <input type="radio" name="options" id="option1" autocomplete="off" onclick="@(() => SetRankingDisplayMode(RankingDisplayMode.Average))" /> Average
                 </label>
                 <label class="btn btn-info @(this.RankingDisplayMode == RankingDisplayMode.Sum ? "active" : "")">
-                    <input type="radio" name="options" id="option2" autocomplete="off" @onclick="@(() => this.RankingDisplayMode = RankingDisplayMode.Sum)" /> Sum
+                    <input type="radio" name="options" id="option2" autocomplete="off" onclick="@(() => SetRankingDisplayMode(RankingDisplayMode.Sum))" /> Sum
                 </label>
             </span>
         </span>
@@ -68,11 +73,15 @@
             @if (this.CurrentUserMode == UserMode.Editor)
             {
                 <TelerikDropDownList Data="@this.ShareModes"
-                                     @bind-Value="@this.SelectedShareMode"
-                                     ValueField="@nameof(UserModeDropDownItem.ModeId)"
-                                     TextField="@nameof(UserModeDropDownItem.Name)"
-                                     TItem="@UserModeDropDownItem" TValue="@int"
-                                     Height="38px" Width="160px" PopupHeight="Auto" />
+                                 @bind-Value="@this.SelectedShareMode"
+                                 ValueField="@nameof(UserModeDropDownItem.ModeId)"
+                                 TextField="@nameof(UserModeDropDownItem.Name)"
+                                 TItem="@UserModeDropDownItem" TValue="@int"
+                                 Width="160px">
+                    <DropDownListSettings>
+                        <DropDownListPopupSettings Height="auto" />
+                    </DropDownListSettings>
+                </TelerikDropDownList>
             }
             <a class="btn btn-light c-flexHorizontalChildRight" href="@($"/scoreboard/{this.Gamestate.Game.GUID}/{(this.CurrentUserMode switch { UserMode.Editor => (int)this.SelectedShareMode, UserMode.Spectator => (int)UserMode.Spectator, UserMode.SpectatorReadOnly => (int)UserMode.SpectatorReadOnly, _ => (int)UserMode.SpectatorReadOnly })}/{this.SelectedTeamNumber}/{(int)this.RankingDisplayMode}")" role="button"><span class="oi oi-link-intact">  share</span></a>
         </span>
@@ -83,11 +92,11 @@
         <div>
             <span class="c-rowElement">
                 <label>hit-limit:</label>
-                <TelerikNumericTextBox @bind-Value=@this.CourseHitLimit Min="7" Max="10"></TelerikNumericTextBox>
+                <TelerikNumericTextBox @bind-Value="@this.CourseHitLimit" Min="7" Max="10" Width="80px"></TelerikNumericTextBox>
             </span>
             <span class="c-rowElement">
                 <TelerikButton Class="c-increaseButton" OnClick="@this.RemovePlayer" Enabled="@(this.Gamestate.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count() > 0)">-</TelerikButton>
-                <TelerikTextBox Label="Player" @bind-value="@PlayerNameToAdd" />
+                <TelerikTextBox @bind-Value="@PlayerNameToAdd" PlaceHolder="player name" Width="200px" />
                 <TelerikButton Class="c-increaseButton" OnClick="@this.AddPlayer">+</TelerikButton>
                 <TelerikButton Icon="myspace" OnClick="@this.CreateNewTeam">new team</TelerikButton>
             </span>
@@ -95,7 +104,7 @@
             <span class="c-rowElement">
                 <label>courses:</label>
                 <TelerikButton Class="c-increaseButton" OnClick="@this.RemoveCourse" Enabled="@(this.Gamestate.Game.Courses.Count > 0)">-</TelerikButton>
-                <TelerikNumericTextBox @bind-Value=@this.CourseParNumberToAdd Min="1" Max="@this.CourseHitLimit"></TelerikNumericTextBox>
+                <TelerikNumericTextBox @bind-Value="@this.CourseParNumberToAdd" Min="1" Max="@this.CourseHitLimit" Width="200px"></TelerikNumericTextBox>
                 <TelerikButton Class="c-increaseButton" OnClick="@this.AddCourse">+</TelerikButton>
             </span>
         </div>
@@ -104,7 +113,7 @@
     <div class="c-flexContainerWithCenteredItem" style="margin-top: 10px;">
         @if (this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Running)
         {
-            <TelerikAnimationContainer AnimationType="@AnimationType.SlideUp" AnimationDuration="300" ShowDelay="100" @ref="@this.AutoRefreshAnimationContainer" >
+            <TelerikAnimationContainer AnimationType="@AnimationType.SlideUp" AnimationDuration="300" ShowDelay="100" @ref="@this.AutoRefreshAnimationContainer">
                 <span class="c-toastMessage">auto-refresh in </span>
                 <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.9 ? "c-opacityAnimationHidden" : "")" style="font-size: 1.4em;">@this.AutoRefreshEmoji</span>
                 <span class="c-opacityAnimation @(this.AutoRefreshHelper.Progress >= 0.7 ? "c-opacityAnimationHidden" : "")" style="font-size: 1.3em;">@this.AutoRefreshEmoji</span>
@@ -118,17 +127,16 @@
 
 <div class="fullViewHeightOnMobileDevice" style="position: relative; margin-top: -10px; min-height: 167px; height: calc(100vh - @((this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Configuring) ? "200" : "143")px);">
     <TelerikGrid Data=@this.Gamestate.Game.Courses.OrderBy(a => a.Number) Height="100%">
-        <TelerikGridColumns>
+        <GridColumns>
             @if (this.ShowColumns)
             {
-                <TelerikGridColumn Title="" Editable="false" Width="22px">
+                <GridColumn Title="" Editable="false" Width="22px">
                     <Template>
-
                         @if (context is Course c)
                         {
                             if (this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Running)
                             {
-                                <div @onclick="@(() => { this.SelectedTeam.CurrentCourseNumber = (this.SelectedTeam.CurrentCourseNumber == c.Number ? null : (int?)c.Number); this.Gamestate.RaiseStateChanged(this, new StateChangedContext { Key = Context_CurrentCourse });})" class="c-clickableCell">
+                                <div onclick="@(() => { this.SelectedTeam.CurrentCourseNumber = (this.SelectedTeam.CurrentCourseNumber == c.Number ? null : (int?)c.Number); this.Gamestate.RaiseStateChanged(this, new StateChangedContext { Key = Context_CurrentCourse });})" class="c-clickableCell">
                                     @if (c.Number == this.SelectedTeam.CurrentCourseNumber)
                                     {
                                         <span class="oi oi-aperture c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" style="color: darkred;"></span>
@@ -158,25 +166,25 @@
                             }
                         }
                     </Template>
-                </TelerikGridColumn>
+                </GridColumn>
 
 
-                <TelerikGridColumn Title="No." Field="@nameof(Course.Number)" Editable="false" Width="40px">
+                <GridColumn Title="No." Field="@nameof(Course.Number)" Editable="false" Width="40px">
                     <Template>
                         @if (context is Course c)
                         {
                             <div class="c-alignCenter c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")">@((context as Course).Number)</div>
                         }
                     </Template>
-                </TelerikGridColumn>
+                </GridColumn>
 
-                <TelerikGridColumn Title="Par" Field="@nameof(Course.Par)" Editable="false" Width="40px">
+                <GridColumn Title="Par" Field="@nameof(Course.Par)" Editable="false" Width="40px">
                     <Template>
                         @if (context is Course c)
                         {
                             if (this.CurrentUserMode == UserMode.Editor && (this.Gamestate.Status == Gamestatus.Configuring || this.Gamestate.Status == Gamestatus.Running))
                             {
-                                <div class="c-alignCenter c-clickableCell c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" @onclick="@(() => this.IncreasePar(context as Course))">@((context as Course).Par)</div>
+                                <div class="c-alignCenter c-clickableCell c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" onclick="@(() => this.IncreasePar(context as Course))">@((context as Course).Par)</div>
                             }
                             else
                             {
@@ -184,41 +192,41 @@
                             }
                         }
                     </Template>
-                </TelerikGridColumn>
+                </GridColumn>
 
                 @if (this.Gamestate.Game.Teams.Single(a => a.IsDefaultTeam).TeamPlayers.Select(a => a.Player).Count() == 0)
                 {
-                    <TelerikGridColumn Title="" Field="" />
+                    <GridColumn Title="" Field="" />
                 }
 
                 @foreach (var player in this.RankedPlayers)
                 {
-                    <TelerikGridColumn Title="@(this.RankingDisplayMode switch { RankingDisplayMode.Average => player.NameForAvgRanking, RankingDisplayMode.Sum => player.NameForSumRanking, _ => throw new NotImplementedException()})">
+                    <GridColumn Title="@(this.RankingDisplayMode switch { RankingDisplayMode.Average => player.NameForAvgRanking, RankingDisplayMode.Sum => player.NameForSumRanking, _ => throw new NotImplementedException()})">
                         <Template>
                             @if (context is Course c)
                             {
                                 if (this.CurrentUserMode == UserMode.Editor && this.Gamestate.Status == Gamestatus.Running)
                                 {
-                                    <div class="c-alignCenter c-clickableCell c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" @onclick="@(() => this.IncreaseHitCount(context as Course, player))">
-                                        <div class="c-ratingColorize" data-hitDiffToPar="@((c.PlayerCourseHits.SingleOrDefault(a => a.Player == player)?.HitCount ?? 0) - c.Par)">
-                                            <div class="c-alignCenter">@((c.PlayerCourseHits.SingleOrDefault(a => a.Player == player)?.HitCount))</div>
+                                    <div class="c-alignCenter c-clickableCell c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")" onclick="@(() => this.IncreaseHitCount(context as Course, player))">
+                                        <div class="c-ratingColorize" data-hitDiffToPar="@((player.PlayerCourseHits.SingleOrDefault(a => a.Course == c)?.HitCount ?? 0) - c.Par)">
+                                            <div class="c-alignCenter">@((player.PlayerCourseHits.SingleOrDefault(a => a.Course == c)?.HitCount))</div>
                                         </div>
                                     </div>
                                 }
                                 else
                                 {
                                     <div class="c-alignCenter c-loweredOpacityAnimation @(this.RowShouldBeDisplayedTransparently(c) ? "c-loweredOpacity" : "")">
-                                        <div class="c-ratingColorize" data-hitDiffToPar="@((c.PlayerCourseHits.SingleOrDefault(a => a.Player == player)?.HitCount ?? 0) - c.Par)">
-                                            <div class="c-alignCenter">@((c.PlayerCourseHits.SingleOrDefault(a => a.Player == player)?.HitCount))</div>
+                                        <div class="c-ratingColorize" data-hitDiffToPar="@((player.PlayerCourseHits.SingleOrDefault(a => a.Course == c)?.HitCount ?? 0) - c.Par)">
+                                            <div class="c-alignCenter">@((player.PlayerCourseHits.SingleOrDefault(a => a.Course == c)?.HitCount))</div>
                                         </div>
                                     </div>
                                 }
                             }
                         </Template>
-                    </TelerikGridColumn>
+                    </GridColumn>
                 }
             }
-        </TelerikGridColumns>
+        </GridColumns>
     </TelerikGrid>
     @if (this.CurrentUserMode == UserMode.Editor)
     {
@@ -234,13 +242,13 @@
 </div>
 
 <TelerikWindow Width="420px" Height="260px" Centered="true" Visible="@IsNotificationWindowVisible" Modal="true">
-    <TelerikWindowTitle>
+    <WindowTitle>
         <strong>404 : game not found</strong>
-    </TelerikWindowTitle>
-    <TelerikWindowActions>
-        <TelerikWindowAction Name="Close" OnClick="@(() => { this.IsNotificationWindowVisible = false; })" />
-    </TelerikWindowActions>
-    <TelerikWindowContent>
+    </WindowTitle>
+    <WindowActions>
+        <WindowAction Name="Close" OnClick="@(() => { this.IsNotificationWindowVisible = false; })" />
+    </WindowActions>
+    <WindowContent>
         <div style="display: flex; flex-direction: column;">
             <div style="display: flex; justify-content: space-around;">
                 <div>
@@ -256,7 +264,7 @@
             </div>
         </div>
 
-    </TelerikWindowContent>
+    </WindowContent>
 </TelerikWindow>
 
 <link href="/css/styles/GameScoreboard.min.css" rel="stylesheet" />

@@ -1,23 +1,22 @@
-﻿namespace MiniatureGolf.Models
+﻿namespace MiniatureGolf.Models;
+
+public enum Gamestatus
 {
-    public enum Gamestatus
-    {
-        Created = 1,
-        Configuring = 5,
-        Running = 10,
-        Finished = 15,
-    }
+    Created = 1,
+    Configuring = 5,
+    Running = 10,
+    Finished = 15,
+}
 
-    public enum UserMode
-    {
-        Editor = 0,
-        Spectator = 1,
-        SpectatorReadOnly = 2,
-    }
+public enum UserMode
+{
+    Editor = 0,
+    Spectator = 1,
+    SpectatorReadOnly = 2,
+}
 
-    public enum RankingDisplayMode
-    {
-        Average,
-        Sum,
-    }
+public enum RankingDisplayMode
+{
+    Average,
+    Sum,
 }

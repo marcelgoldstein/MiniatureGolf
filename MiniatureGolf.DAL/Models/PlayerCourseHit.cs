@@ -1,16 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿namespace MiniatureGolf.DAL.Models;
 
-namespace MiniatureGolf.DAL.Models
+public class PlayerCourseHit
 {
-    public class PlayerCourseHit
-    {
-        public int PlayerId { get; set; }
-        public Player Player { get; set; }
-        public int CourseId { get; set; }
-        public Course Course { get; set; }
+    public int PlayerId { get; set; }
+    public Player Player { get; set; }
 
-        public int? HitCount { get; set; }
-    }
+    public int CourseId { get; set; }
+    public Course Course { get; set; }
+
+    public int? HitCount { get; set; }
 }
