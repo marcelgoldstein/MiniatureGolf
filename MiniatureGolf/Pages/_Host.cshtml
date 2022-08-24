@@ -20,15 +20,13 @@
               integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" />
     </environment>
 
-    <link rel="stylesheet" href="~/css/kendo-themes/bootstrap/dist/all.css" />
+    <script src="_content/Telerik.UI.for.Blazor/js/telerik-blazor.js"></script>
+    <link rel="stylesheet" href="_content/Telerik.UI.for.Blazor/css/kendo-theme-bootstrap/all.css" />
 
     <link href="css/site.css" rel="stylesheet" />
-
-    <script src="_content/Telerik.UI.for.Blazor/js/telerik-blazor.js"></script>
-
 </head>
 <body>
-    <app>@(await Html.RenderComponentAsync<App>())</app>
+    <app>@(await Html.RenderComponentAsync<App>(RenderMode.Server))</app>
 
     <script src="_framework/blazor.server.js"></script>
 </body>

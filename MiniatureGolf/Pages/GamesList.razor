@@ -2,48 +2,63 @@
 
 @using MiniatureGolf.Models
 @using MiniatureGolf.Services
+@using Telerik.Blazor.Components
+@using Telerik.Blazor
 
 @inherits MiniatureGolf.Pages.GamesListModel
 
 <div style="position: relative;">
     <div class="c-flexContainer">
-        <TelerikButton Class="c-flexItem c-flexItemFirst" @OnClick="@(() => { this.SelectedDateFilter = DateFilter.Day; this.LoadGames(); })" Primary="@(this.SelectedDateFilter == DateFilter.Day ? true : false)">day</TelerikButton>
-        <TelerikButton Class="c-flexItem" @OnClick="@(() => { this.SelectedDateFilter = DateFilter.Week; this.LoadGames(); })" Primary="@(this.SelectedDateFilter == DateFilter.Week ? true : false)">week</TelerikButton>
-        <TelerikButton Class="c-flexItem" @OnClick="@(() => { this.SelectedDateFilter = DateFilter.Month; this.LoadGames(); })" Primary="@(this.SelectedDateFilter == DateFilter.Month ? true : false)">month</TelerikButton>
-        <TelerikButton Class="c-flexItem" @OnClick="@(() => { this.SelectedDateFilter = DateFilter.Quarter; this.LoadGames(); })" Primary="@(this.SelectedDateFilter == DateFilter.Quarter ? true : false)">quarter</TelerikButton>
-        <TelerikButton Class="c-flexItem c-flexItemLast" @OnClick="@(() => { this.SelectedDateFilter = DateFilter.Year; this.LoadGames(); })" Primary="@(this.SelectedDateFilter == DateFilter.Year ? true : false)">year</TelerikButton>
+        <TelerikButton Class="c-flexItem c-flexItemFirst" OnClick="@(() => { this.SelectedDateFilter = DateFilter.Day; this.LoadGames(); })" ThemeColor="@(this.SelectedDateFilter == DateFilter.Day ? @ThemeConstants.Button.ThemeColor.Primary : @ThemeConstants.Button.ThemeColor.Base)">day</TelerikButton>
+        <TelerikButton Class="c-flexItem" OnClick="@(() => { this.SelectedDateFilter = DateFilter.Week; this.LoadGames(); })" ThemeColor="@(this.SelectedDateFilter == DateFilter.Week ? @ThemeConstants.Button.ThemeColor.Primary : @ThemeConstants.Button.ThemeColor.Base)">week</TelerikButton>
+        <TelerikButton Class="c-flexItem" OnClick="@(() => { this.SelectedDateFilter = DateFilter.Month; this.LoadGames(); })" ThemeColor="@(this.SelectedDateFilter == DateFilter.Month ? @ThemeConstants.Button.ThemeColor.Primary : @ThemeConstants.Button.ThemeColor.Base)">month</TelerikButton>
+        <TelerikButton Class="c-flexItem" OnClick="@(() => { this.SelectedDateFilter = DateFilter.Quarter; this.LoadGames(); })" ThemeColor="@(this.SelectedDateFilter == DateFilter.Quarter ? @ThemeConstants.Button.ThemeColor.Primary : @ThemeConstants.Button.ThemeColor.Base)">quarter</TelerikButton>
+        <TelerikButton Class="c-flexItem c-flexItemLast" OnClick="@(() => { this.SelectedDateFilter = DateFilter.Year; this.LoadGames(); })" ThemeColor="@(this.SelectedDateFilter == DateFilter.Year ? @ThemeConstants.Button.ThemeColor.Primary : @ThemeConstants.Button.ThemeColor.Base)">year</TelerikButton>
     </div>
 
     <div>
-        <TelerikDropDownList Data="@this.FilterStates" @bind-value="@this.SelectedFilterStateId" ValueField="@nameof(FilterState.Id)" TextField="@nameof(FilterState.Name)" Height="38px" Width="110px" PopupHeight="Auto" TItem="@FilterState" TValue="@int" />
-        <TelerikTextBox Label="search for player" @bind-value="@this.PlayerFilterInput" />
+        <TelerikDropDownList 
+            Data="@this.FilterStates" 
+            @bind-Value="@this.SelectedFilterStateId" 
+            ValueField="@nameof(FilterState.Id)" 
+            TextField="@nameof(FilterState.Name)" 
+            Width="140px" 
+            TItem="@FilterState" 
+            TValue="@int">
+            <DropDownListSettings>
+                <DropDownListPopupSettings Height="Auto" />
+            </DropDownListSettings>
+        </TelerikDropDownList>
+
+        <label for="txtPlayerSearch">search for player</label>
+        <TelerikTextBox Id="txtPlayerSearch" @bind-Value="@this.PlayerFilterInput" Width="200px"/>
 
         <span class="btn-group btn-group-toggle" data-toggle="buttons">
             <label class="btn btn-info @(this.RankingDisplayMode == RankingDisplayMode.Average ? "active" : "")">
-                <input type="radio" name="options" id="option1" autocomplete="off" @onclick="@(() => this.RankingDisplayMode = RankingDisplayMode.Average)" /> Average
+                <input type="radio" name="options" id="option1" autocomplete="off" onclick="@(() => SetRankingDisplayMode(RankingDisplayMode.Average))" /> Average
             </label>
             <label class="btn btn-info @(this.RankingDisplayMode == RankingDisplayMode.Sum ? "active" : "")">
-                <input type="radio" name="options" id="option2" autocomplete="off" @onclick="@(() => this.RankingDisplayMode = RankingDisplayMode.Sum)" /> Sum
+                <input type="radio" name="options" id="option2" autocomplete="off" onclick="@(() => SetRankingDisplayMode(RankingDisplayMode.Sum))" /> Sum
             </label>
         </span>
     </div>
 
     <div class="fullViewHeightOnMobileDevice" style="margin-top: 10px; min-height: 235px; height: calc(100vh - 200px);">
         <TelerikGrid Data=@this.CurrentGames Height="100%" Sortable="true">
-            <TelerikGridColumns>
-                <TelerikGridColumn Title="Status" Editable="false" Width="130px" Field="@nameof(LightweightGamestate.Status)">
+            <GridColumns>
+                <GridColumn Title="Status" Editable="false" Width="130px" Field="@nameof(LightweightGamestate.Status)">
                     <Template>
                         @if (context is LightweightGamestate gs)
-                        {
-                            <a class="btn @(this.GetButtonClassForState(gs))" href="@($"/scoreboard/{gs.Game.GUID}/{(int)UserMode.SpectatorReadOnly}/0/{(int)this.RankingDisplayMode}")" role="button" style="width: 100%;">@(gs.StatusText)</a>
-                        }
+                    {
+                        <a class="btn @(this.GetButtonClassForState(gs))" href="@($"/scoreboard/{gs.Game.GUID}/{(int)UserMode.SpectatorReadOnly}/0/{(int)this.RankingDisplayMode}")" role="button" style="width: 100%;">@(gs.StatusText)</a>
+                    }
                     </Template>
-                </TelerikGridColumn>
+                </GridColumn>
 
-                <TelerikGridColumn Title="Time" Editable="false" Width="190px" Field="@nameof(LightweightGamestate.Time)" />
+                <GridColumn Title="Time" Editable="false" Width="190px" Field="@nameof(LightweightGamestate.Time)" />
 
-                <TelerikGridColumn Title="Players" Editable="false" Width="5000px" Field="@(this.RankingDisplayMode switch { RankingDisplayMode.Average => nameof(LightweightGamestate.PlayersTextForAvgRanking), RankingDisplayMode.Sum => nameof(LightweightGamestate.PlayersTextForSumRanking), _ => throw new NotImplementedException()})" />
-            </TelerikGridColumns>
+                <GridColumn Title="Players" Editable="false" Width="5000px" Field="@(this.RankingDisplayMode switch { RankingDisplayMode.Average => nameof(LightweightGamestate.PlayersTextForAvgRanking), RankingDisplayMode.Sum => nameof(LightweightGamestate.PlayersTextForSumRanking), _ => throw new NotImplementedException()})" />
+            </GridColumns>
         </TelerikGrid>
     </div>
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+
+#nullable disable
 
 namespace MiniatureGolf.DAL.Migrations
 {
@@ -9,13 +10,31 @@ namespace MiniatureGolf.DAL.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "Games",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    GUID = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    CreationTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    StartTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    FinishTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CourseHitLimit = table.Column<int>(type: "int", nullable: false),
+                    State = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Games", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Players",
                 columns: table => new
                 {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Number = table.Column<int>(nullable: false),
-                    Name = table.Column<string>(nullable: true)
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Number = table.Column<int>(type: "int", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -23,50 +42,14 @@ namespace MiniatureGolf.DAL.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "States",
-                columns: table => new
-                {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Text = table.Column<string>(nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_States", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Games",
-                columns: table => new
-                {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    GUID = table.Column<string>(nullable: true),
-                    CreationTime = table.Column<DateTime>(nullable: true),
-                    StartTime = table.Column<DateTime>(nullable: true),
-                    FinishTime = table.Column<DateTime>(nullable: true),
-                    StateId = table.Column<int>(nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Games", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Games_States_StateId",
-                        column: x => x.StateId,
-                        principalTable: "States",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Courses",
                 columns: table => new
                 {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Number = table.Column<int>(nullable: false),
-                    Par = table.Column<int>(nullable: false),
-                    GameId = table.Column<int>(nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Number = table.Column<int>(type: "int", nullable: false),
+                    Par = table.Column<int>(type: "int", nullable: false),
+                    GameId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -83,13 +66,13 @@ namespace MiniatureGolf.DAL.Migrations
                 name: "Teams",
                 columns: table => new
                 {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Number = table.Column<int>(nullable: false),
-                    Name = table.Column<string>(nullable: true),
-                    GameId = table.Column<int>(nullable: false),
-                    CurrentCourseNumber = table.Column<int>(nullable: true),
-                    IsDefaultTeam = table.Column<bool>(nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Number = table.Column<int>(type: "int", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    GameId = table.Column<int>(type: "int", nullable: false),
+                    CurrentCourseNumber = table.Column<int>(type: "int", nullable: true),
+                    IsDefaultTeam = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -106,9 +89,9 @@ namespace MiniatureGolf.DAL.Migrations
                 name: "PlayerCourseHits",
                 columns: table => new
                 {
-                    PlayerId = table.Column<int>(nullable: false),
-                    CourseId = table.Column<int>(nullable: false),
-                    HitCount = table.Column<int>(nullable: true)
+                    PlayerId = table.Column<int>(type: "int", nullable: false),
+                    CourseId = table.Column<int>(type: "int", nullable: false),
+                    HitCount = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -131,9 +114,9 @@ namespace MiniatureGolf.DAL.Migrations
                 name: "TeamPlayers",
                 columns: table => new
                 {
-                    PlayerId = table.Column<int>(nullable: false),
-                    TeamId = table.Column<int>(nullable: false),
-                    Info = table.Column<string>(nullable: true)
+                    PlayerId = table.Column<int>(type: "int", nullable: false),
+                    TeamId = table.Column<int>(type: "int", nullable: false),
+                    Info = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -158,9 +141,11 @@ namespace MiniatureGolf.DAL.Migrations
                 column: "GameId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Games_StateId",
+                name: "IX_Games_GUID",
                 table: "Games",
-                column: "StateId");
+                column: "GUID",
+                unique: true,
+                filter: "[GUID] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PlayerCourseHits_PlayerId",
@@ -176,8 +161,6 @@ namespace MiniatureGolf.DAL.Migrations
                 name: "IX_Teams_GameId",
                 table: "Teams",
                 column: "GameId");
-
-            migrationBuilder.InsertData("States", new string[] { "Id", "Text" }, new object[,] { { 1, "Created" }, { 5, "Configuring" }, { 10, "Running" }, { 15, "Finished" } });
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
@@ -199,9 +182,6 @@ namespace MiniatureGolf.DAL.Migrations
 
             migrationBuilder.DropTable(
                 name: "Games");
-
-            migrationBuilder.DropTable(
-                name: "States");
         }
     }
 }
