@@ -509,7 +509,9 @@ public class GameScoreboardModel : ComponentBase, IDisposable
 
         RandoPickAutoRefreshEmoji();
         AutoRefreshHelper.Push();
-        _ = AutoRefreshAnimationContainer.ShowAsync();
+
+        if (disposedValue == false)
+            _ = AutoRefreshAnimationContainer.ShowAsync();
 
         if (Gamestate.Status == Gamestatus.Running)
             SelectedTeam.CurrentCourseNumber = c.Number;
